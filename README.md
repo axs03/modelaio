@@ -1,2 +1,2 @@
-# modelaio
-all models in one chat
+# modelo.ai
+Merging model responses to really get the assumed correct answer.
