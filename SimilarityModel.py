@@ -2,9 +2,14 @@ import gensim
 from gensim.models.doc2vec import TaggedDocument
 import gensim.downloader as api
 from sklearn.metrics.pairwise import cosine_similarity
-
+import numpy as np
+import random
 
 class SimilarityModel:
+    SEED = 42
+    random.seed(SEED)
+    np.random.seed(SEED)
+
     def __init__(self, training_documents=None):
         if training_documents:
             self.training_data = training_documents
@@ -13,7 +18,7 @@ class SimilarityModel:
             self.set_train_data_text8()
         
         self.init_model()
-        # self.train()
+        self.train()
 
 
     def set_train_data_text8(self):
@@ -26,15 +31,22 @@ class SimilarityModel:
                 yield gensim.models.doc2vec.TaggedDocument(words = list_of_words, tags = [i])
 
         self.training_data = list(tagged_document(data)) # list of TaggedDocument objects
+    
+
+    def set_train_data(self, training_documents):
+        # can use an array of tagged docs called documents = [] to train the model
+        # to process chunks, we can make each chunk a tagged document
+        pass
 
 
-    def init_model(self, vector_size=50, window=2, min_count=1, workers=4, epochs=20):
+    def init_model(self, vector_size: int=50, window: int=2, min_count: int=1, workers: int=1, epochs: int=20, seed=SEED):
         # Initialize the Doc2Vec model
         self.model = gensim.models.Doc2Vec(vector_size=vector_size,  # Dimensionality of the document vectors
                                            window=window,         # Maximum distance between the current and predicted word within a sentence
                                            min_count=min_count,      # Ignores all words with total frequency lower than this
                                            workers=workers,        # Number of CPU cores to use for training
-                                           epochs=epochs)        # Number of training epochs   
+                                           epochs=epochs,         # Number of training epochs 
+                                           seed=seed)          
 
         # build the vocabulary from the training data
         self.model.build_vocab(self.training_data)
@@ -48,12 +60,17 @@ class SimilarityModel:
 
     def get_similarity(self, response1: TaggedDocument, response2:TaggedDocument):
         # Infer vectors for the documents
-        vector1 = self.model.infer_vector(response1.words)
-        vector2 = self.model.infer_vector(response2.words)
+        vector1 = self.model.infer_vector(response1.words,
+                                          epochs=100,
+                                          alpha=0.025,)
+        vector2 = self.model.infer_vector(response2.words,
+                                          epochs=100,
+                                          alpha=0.025,)
 
         # Calculate cosine similarity
         similarity = cosine_similarity([vector1], [vector2])[0][0]
         return similarity
+    
     
     def get_training_data(self):
         return self.training_data
