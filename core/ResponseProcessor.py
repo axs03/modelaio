@@ -3,7 +3,7 @@ import re
 import os
 
 class ResponseProcessor:
-    def __init__(self, file_paths = list()):
+    def __init__(self, file_paths = []):
         self.file_paths = file_paths
         self.responses = dict()
 

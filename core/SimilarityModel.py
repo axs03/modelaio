@@ -1,76 +1,44 @@
-import gensim
-from gensim.models.doc2vec import TaggedDocument
-import gensim.downloader as api
+from transformers import AutoTokenizer, AutoModel
+import torch
+import torch.nn.functional as F
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
-import random
 
 class SimilarityModel:
-    SEED = 42
-    random.seed(SEED)
-    np.random.seed(SEED)
+    def __init__(self):
+        # Load model from HuggingFace Hub
+        self.tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+        self.model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+        print("Model loaded successfully")
 
-    def __init__(self, training_documents=None):
-        if training_documents:
-            self.training_data = training_documents
-        else:
-            # default to text8 dataset
-            self.set_train_data_text8()
-        
-        self.init_model()
-        self.train()
+    # Mean Pooling - Take attention mask into account for correct averaging ; give the sentence embeddings
+    def mean_pooling(self, model_output, attention_mask):
+        token_embeddings = model_output[0] # First element of model_output contains all token embeddings
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
 
-    def set_train_data_text8(self):
-        dataset = api.load("text8")
-        data = [i for i in dataset]
-        # convert the text8 dataset to tagged documents
-        def tagged_document(list_of_list_of_words):
-            for i, list_of_words in enumerate(list_of_list_of_words):
-                # use documents index as the tag
-                yield gensim.models.doc2vec.TaggedDocument(words = list_of_words, tags = [i])
+    def get_cosine_similarity(self, **responses):
+        # Convert keyword arguments to a list of sentences
+        sentences = list(responses.values())
 
-        self.training_data = list(tagged_document(data)) # list of TaggedDocument objects
-    
+        if len(sentences) < 2:
+            raise ValueError("At least two sentences are required to compute cosine similarity.")
 
-    def set_train_data(self, training_documents):
-        # can use an array of tagged docs called documents = [] to train the model
-        # to process chunks, we can make each chunk a tagged document
-        pass
+        # Tokenize sentences
+        encoded_input = self.tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
 
+        # Compute token embeddings
+        with torch.no_grad():
+            model_output = self.model(**encoded_input)
 
-    def init_model(self, vector_size: int=50, window: int=2, min_count: int=1, workers: int=1, epochs: int=20, seed=SEED):
-        # Initialize the Doc2Vec model
-        self.model = gensim.models.Doc2Vec(vector_size=vector_size,  # Dimensionality of the document vectors
-                                           window=window,         # Maximum distance between the current and predicted word within a sentence
-                                           min_count=min_count,      # Ignores all words with total frequency lower than this
-                                           workers=workers,        # Number of CPU cores to use for training
-                                           epochs=epochs,         # Number of training epochs 
-                                           seed=seed)          
+        # Perform pooling
+        sentence_embeddings = self.mean_pooling(model_output, encoded_input['attention_mask'])
 
-        # build the vocabulary from the training data
-        self.model.build_vocab(self.training_data)
-        print("Vocabulary built.")
+        # Normalize embeddings
+        sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
 
-
-    def train(self):
-        self.model.train(self.training_data, total_examples=self.model.corpus_count, epochs=self.model.epochs)
-        print("Model trained.")
-
-
-    def get_similarity(self, response1: TaggedDocument, response2:TaggedDocument):
-        # Infer vectors for the documents
-        vector1 = self.model.infer_vector(response1.words,
-                                          epochs=100,
-                                          alpha=0.025,)
-        vector2 = self.model.infer_vector(response2.words,
-                                          epochs=100,
-                                          alpha=0.025,)
-
-        # Calculate cosine similarity
-        similarity = cosine_similarity([vector1], [vector2])[0][0]
-        return similarity
-    
-    
-    def get_training_data(self):
-        return self.training_data
+        # Compute cosine similarity
+        sentence_embeddings_np = sentence_embeddings.cpu().numpy()
+        cosine_similarities = cosine_similarity(sentence_embeddings_np)
+        print("Cosine similarities:")
+        print(cosine_similarities[0][1]) # shape is 2,2
