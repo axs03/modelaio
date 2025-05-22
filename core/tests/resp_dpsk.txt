@@ -1,13 +1,6 @@
-**Definition**
-Binary numbers form the foundation of digital systems, using a base-2 numeral system composed of only two digits: 0 and 1. 
-Each digit, called a bit, represents a power of 2, with positions increasing from right to left (e.g., 2⁰, 2¹, 2²). 
-For example, the binary number 101 translates to 5 in decimal (1×2² + 0×2¹ + 1×2⁰). 
-This system contrasts with the decimal system (base-10), which uses digits 0-9 and powers of 10. 
-Binary’s simplicity aligns with electronic hardware, where 0 and 1 correspond to “off” and “on” states in circuits.  
+Binary numbers are a base-2 numbering system, using only two digits: **0** and **1**. Each digit represents a power of 2, much like each digit in decimal (base-10) represents a power of 10. For example, the binary number **1011** translates to:  
+(1 × 2³) + (0 × 2²) + (1 × 2¹) + (1 × 2⁰) = **11** in decimal.  
 
-**About**
-Binary numbers are integral to computing, enabling data storage, processing, and communication. 
-Computers use binary to represent all information—text, images, and instructions—as sequences of bits. 
-Logical operations (AND, OR, NOT) and arithmetic are performed using binary-based logic gates within processors. 
-Networks and storage devices also rely on binary, transmitting or saving data as encoded 0s and 1s. 
-Despite their efficiency for machines, binary is rarely used directly by humans, who interact with higher-level abstractions like programming languages or user interfaces.
+Binary is fundamental in computing because digital electronics (like CPUs and memory) operate using **on/off states** (represented by 1 and 0). This simplicity allows reliable processing, storage, and transmission of data. All complex operations—math, text, images, and programs—are ultimately broken down into binary for computers to execute efficiently.  
+
+Beyond hardware, binary enables **Boolean logic** (AND, OR, NOT), which underpins programming, cryptography, and data compression. Its efficiency in representing logical states makes it indispensable in technology.

@@ -22,7 +22,7 @@ class SimilarityModel:
         sentences = list(responses.values())
 
         if len(sentences) < 2:
-            raise ValueError("At least two sentences are required to compute cosine similarity.")
+            raise ValueError("At least two models are required to compute cosine similarity.")
 
         # Tokenize sentences
         encoded_input = self.tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
