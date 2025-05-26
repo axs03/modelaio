@@ -17,10 +17,7 @@ class SimilarityModel:
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
 
-    def get_cosine_similarity(self, **responses):
-        # Convert keyword arguments to a list of sentences
-        sentences = list(responses.values())
-
+    def get_cosine_similarity(self, sentences):
         if len(sentences) < 2:
             raise ValueError("At least two models are required to compute cosine similarity.")
 
@@ -40,5 +37,4 @@ class SimilarityModel:
         # Compute cosine similarity
         sentence_embeddings_np = sentence_embeddings.cpu().numpy()
         cosine_similarities = cosine_similarity(sentence_embeddings_np)
-        print("Cosine similarities:")
-        print(cosine_similarities[0][1]) # shape is 2,2
+        return cosine_similarities[0][1] # shape is 2,2
