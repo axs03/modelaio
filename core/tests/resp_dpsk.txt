@@ -1,6 +1,0 @@
-Binary numbers are a base-2 numbering system, using only two digits: **0** and **1**. Each digit represents a power of 2, much like each digit in decimal (base-10) represents a power of 10. For example, the binary number **1011** translates to:  
-(1 × 2³) + (0 × 2²) + (1 × 2¹) + (1 × 2⁰) = **11** in decimal.  
-
-Binary is fundamental in computing because digital electronics (like CPUs and memory) operate using **on/off states** (represented by 1 and 0). This simplicity allows reliable processing, storage, and transmission of data. All complex operations—math, text, images, and programs—are ultimately broken down into binary for computers to execute efficiently.  
-
-Beyond hardware, binary enables **Boolean logic** (AND, OR, NOT), which underpins programming, cryptography, and data compression. Its efficiency in representing logical states makes it indispensable in technology.

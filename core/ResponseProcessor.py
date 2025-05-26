@@ -3,8 +3,7 @@ import re
 import os
 
 class ResponseProcessor:
-    def __init__(self, file_paths = []):
-        self.file_paths = file_paths
+    def __init__(self):
         self.responses = dict()
 
         self.read_files()

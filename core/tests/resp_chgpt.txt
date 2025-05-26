@@ -1,5 +1,0 @@
-Binary numbers are a way of representing values using only two digits: 0 and 1. This is known as **base-2**, unlike our familiar decimal system, which is base-10 and uses digits from 0 to 9. In binary, each digit (called a *bit*) represents a power of two, with the rightmost bit being 2⁰, the next one 2¹, then 2², and so on. For example, the binary number `1011` represents the decimal number 11 because it equals $1 \times 2^3 + 0 \times 2^2 + 1 \times 2^1 + 1 \times 2^0 = 8 + 0 + 2 + 1$.
-
-Binary is especially useful in computing because digital electronics can easily represent two states: on/off, high/low voltage, or true/false. These two states naturally correspond to the digits 1 and 0. Because of this simplicity, all data in computers — numbers, text, images, and even video — is ultimately stored and processed in binary form.
-
-Beyond storage and processing, binary numbers are also crucial in programming, encryption, networking (like IP addresses), and error detection. They allow for precise, efficient, and reliable operation at the hardware level, making them the foundation of all modern digital technology.

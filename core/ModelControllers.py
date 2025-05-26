@@ -1,11 +1,8 @@
 import os
 from openai import OpenAI
 
-class Controller:
+class LLMController():
     system_message = "You are a helpful assistant"
-
-
-class LLMController(Controller):
     PROVIDERS = {
         "openai": {
             "model":   "gpt-4o-mini",
@@ -19,10 +16,10 @@ class LLMController(Controller):
         }
     }
 
-    def __init__(self, provider="openai", model=None, base_url=None):
+    def __init__(self, provider=None, model=None, base_url=None):
         config = self.PROVIDERS.get(provider)
         if not config:
-            raise ValueError(f"Unknown provider: {provider}")
+            raise ValueError("No Provider is found, value is None")
 
         self.model = model or config["model"]
         ev = config["env_var"]
