@@ -10,13 +10,7 @@ class ResponseProcessor:
         self.read_files()
         self.make_chunks()
 
-        
-    def clean_file_path(self, file_path):
-        name = os.path.basename(file_path)
-        stem, _ = os.path.splitext(name) # _ = extension
-        return stem
-
-
+    
     def read_files(self):
         for file_path in self.file_paths:
             with open(file_path, "r") as file:
@@ -25,6 +19,8 @@ class ResponseProcessor:
                 self.responses[key] = response
     
 
+    # extracting all the headers from a markdown file
+    # TODO: find different way for chunking
     def make_chunks(self):
         response_chunks = dict() # contains the mapped chunks for each response file
         for key, response in self.responses.items():
@@ -51,14 +47,3 @@ class ResponseProcessor:
                 print(f"Paragraph: {i[1]}")
                 print("" + "-"*10)
             print("" + "-"*40)
-
-
-    def vectorize_chunks(self):
-        # create tagged documents from chunks in response processor
-        documents = [
-            TaggedDocument(words=chunk[1].split(), tags=[f"{key}_{chunk[0]}"]) 
-            for key, chunks in self.make_chunks().items() 
-            for chunk in chunks
-        ]
-        return documents
-
