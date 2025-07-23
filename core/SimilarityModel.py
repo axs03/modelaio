@@ -8,7 +8,7 @@ class SimilarityModel:
         # Load model from HuggingFace Hub
         self.tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
         self.model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
-        print("Model loaded successfully")
+        print("Model loaded successfully..")
 
     # Mean Pooling - Take attention mask into account for correct averaging ; give the sentence embeddings
     def mean_pooling(self, model_output, attention_mask):

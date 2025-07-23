@@ -10,27 +10,24 @@ version = "v1"
 class SimilarityPayload(BaseModel):
     inputs: List[str]
 
-@app.get("/")
+@app.get(f"/{version}")
 def read_root():
     return {
         "status": "200", 
         "message": "Welcome to the model.aio backend!"
     }
 
-# test route
-@app.get(f"/{version}/responses")
-def get_response(models: List[str]):
-    try:
-        return {
-            "model_names": models,
-        }
-    except Exception as e:
-        return {
-            "error": str(e),
-            "message": "An error occurred while processing the responses."
-        }
 
-
+# post request to find cosine similarity between two chunks of text
+"""
+{
+    "inputs": [
+        "this is one sentence"`
+        "this is another sentence"
+    ],
+    "similarity_score": 0.8459491729736328
+}
+"""
 @app.post(f"/{version}/similarity")
 async def compute_similarity(payload: SimilarityPayload):
     try:
@@ -45,6 +42,7 @@ async def compute_similarity(payload: SimilarityPayload):
             "inputs": payload.inputs,
             "similarity_score": similarity_score
         }
+    # error catch for failed result
     except Exception as e:
         return {
             "error": str(e),
