@@ -1,48 +1,48 @@
 import os
 from openai import OpenAI
+import dspy
+import json
 
-class LLMController():
-    system_message = """You are a helpful assistant. Provide the answers to the questions based on what you know. 
-                        If you don't know the answer, say 'I don't know'.
-                        
-                        If an answer format is not stated, use the following format to forumlate your response:
-                        **Definition:** <definition>
-                        **Example:** <example>
-                        """
-    PROVIDERS = {
-        "openai": {
-            "model":   "gpt-4o-mini",
-            "env_var": "OPENAI_API_KEY",
-            "base_url": None
-        },
-        "deepseek": {
-            "model":   "deepseek-chat",
-            "env_var": "DEEPSEEK_API_KEY",
-            "base_url": "https://api.deepseek.com"
+
+class LLMControllerDSPy():
+    def __init__(self):
+        self.models = {
+            "openai/gpt-4o-mini" : ["OPENAI_API_KEY", None],
+            "deepseek/deepseek-chat" : ["DEEPSEEK_API_KEY", "https://api.deepseek.com"]
         }
-    }
+        self.init_models()
 
-    def __init__(self, provider, model=None, base_url=None):
-        config = self.PROVIDERS.get(provider)
-        if not config:
-            raise ValueError("No Provider is found, value is None")
 
-        self.model = model or config["model"]
-        ev = config["env_var"]
-        self.api_key = os.environ.get(ev)
-        if not self.api_key:
-            raise EnvironmentError(f"Missing environment variable: {ev}")
+    def init_models(self):
+        self.initialized_models = dict()
 
-        self.client = OpenAI(api_key=self.api_key, base_url=base_url or config["base_url"])
-        self.completion = None
+        try:
+            for model_name, (env_var, base_url) in self.models.items():
+                api_key = os.environ.get(env_var)
+                model_instance = dspy.LM(
+                    model_name,
+                    api_key=api_key,
+                    base_url=base_url
+                )
 
-    def get_response(self, prompt, stream=False):
-        self.completion = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": self.system_message},
-                {"role": "user",   "content": prompt}
-            ],
-            stream=stream
-        )
-        return self.completion.choices[0].message.content # type: ignore
+                self.initialized_models[model_name] = model_instance
+        except Exception as e:
+            raise Exception(f"Error in initializing models: {e}")
+
+
+    def get_response(self, selected_model_names: list, prompt: str):
+        responses = {}
+        try:
+            for model_name in selected_model_names:
+                if model_name in self.initialized_models.keys():
+                    response = self.initialized_models[model_name](prompt)
+                    responses[model_name] = response
+        except Exception as e:
+            raise Exception(f"Error in generating the responses: {e}")
+
+        # pretty print the responses
+        for model_name, response in responses.items():
+            print(f"Response from {model_name}:\n{response}\n")
+        # return the responses as a JSON string
+    
+        # return json.dumps(responses)
