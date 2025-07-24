@@ -62,6 +62,11 @@ async def compute_similarity(payload: SimilarityPayload):
         
         # get the base model
         base_model = payload.base_model_idx
+        if base_model < 0 or base_model >= len(payload.inputs):
+            raise HTTPException(
+                status_code=400,
+                detail=f"base_model_idx {base_model} is out of range. It must be between 0 and {len(payload.inputs) - 1}."
+            )
 
         scores = []
         for i in range(len(payload.inputs)):
