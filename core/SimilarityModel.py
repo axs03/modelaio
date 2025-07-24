@@ -17,12 +17,12 @@ class SimilarityModel:
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
 
-    def get_cosine_similarity(self, sentences):
-        if len(sentences) < 2:
-            raise ValueError("At least two models are required to compute cosine similarity.")
+    def get_cosine_similarity(self, sentence1, sentence2):
+        if not sentence1 or not sentence2:
+            raise ValueError("Both sentences are required to compute cosine similarity.")
 
         # Tokenize sentences
-        encoded_input = self.tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
+        encoded_input = self.tokenizer([sentence1, sentence2], padding=True, truncation=True, return_tensors='pt')
 
         # Compute token embeddings
         with torch.no_grad():

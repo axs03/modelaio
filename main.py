@@ -1,5 +1,5 @@
-from typing import List, Union
-from fastapi import FastAPI, Query, Request, HTTPException
+from typing import List
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from core.SimilarityModel import SimilarityModel
 
@@ -7,13 +7,23 @@ app = FastAPI()
 sim = SimilarityModel()
 version = "v1"
 
+class SimilarityInputObjects(BaseModel):
+    model_name: str
+    content: str
+
 class SimilarityPayload(BaseModel):
-    inputs: List[str]
+    base_model_idx: int
+    inputs: List[SimilarityInputObjects]
+
+class SimilarityResponse(BaseModel):
+    base_model_name: str
+    response: List[SimilarityInputObjects]
+    scores: List[float]
+
 
 @app.get(f"/{version}")
 def read_root():
     return {
-        "status": "200", 
         "message": "Welcome to the model.aio backend!"
     }
 
@@ -21,12 +31,25 @@ def read_root():
 # post request to find cosine similarity between two chunks of text
 """
 {
+    "base_model_idx": 1,
     "inputs": [
-        "this is one sentence"`
-        "this is another sentence"
-    ],
-    "similarity_score": 0.8459491729736328
+        {
+            "model_name": "name of model",
+            "content": "this is base sentence"
+        },
+        {
+            "model_name": "name of another model",
+            "content": "this is another sentence"
+        },
+        {
+            "model_name": "name of different model",
+            "content": "this is a different sentence"
+        },
+        .....
+    ]
 }
+
+The base model will always be the first input in the inputs list.
 """
 @app.post(f"/{version}/similarity")
 async def compute_similarity(payload: SimilarityPayload):
@@ -34,17 +57,27 @@ async def compute_similarity(payload: SimilarityPayload):
         if len(payload.inputs) < 2:
             raise HTTPException(
                 status_code = 400, 
-                detail="At least two models are required to compute cosine similarity."
+                detail="Two models are required to compare responses."
                 )
         
-        similarity_score = float(sim.get_cosine_similarity(payload.inputs))
-        return {
-            "inputs": payload.inputs,
-            "similarity_score": similarity_score
-        }
+        # get the base model
+        base_model = payload.base_model_idx
+
+        scores = []
+        for i in range(len(payload.inputs)):
+            if i == base_model:
+                continue # skip this iteration if it is the base model
+
+            similarity_score = float(sim.get_cosine_similarity(payload.inputs[base_model].content, payload.inputs[i].content))
+            scores.append(similarity_score)
+
+        return SimilarityResponse(
+            base_model_name=payload.inputs[base_model].model_name,
+            response=payload.inputs,
+            scores=scores
+        )
     # error catch for failed result
     except Exception as e:
         return {
             "error": str(e),
-            "message": "An error occurred while calculating similarity."
         }
