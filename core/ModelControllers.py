@@ -2,7 +2,13 @@ import os
 from openai import OpenAI
 
 class LLMController():
-    system_message = "You are a helpful assistant"
+    system_message = """You are a helpful assistant. Provide the answers to the questions based on what you know. 
+                        If you don't know the answer, say 'I don't know'.
+                        
+                        If an answer format is not stated, use the following format to forumlate your response:
+                        **Definition:** <definition>
+                        **Example:** <example>
+                        """
     PROVIDERS = {
         "openai": {
             "model":   "gpt-4o-mini",
@@ -16,7 +22,7 @@ class LLMController():
         }
     }
 
-    def __init__(self, provider=None, model=None, base_url=None):
+    def __init__(self, provider, model=None, base_url=None):
         config = self.PROVIDERS.get(provider)
         if not config:
             raise ValueError("No Provider is found, value is None")
@@ -39,4 +45,4 @@ class LLMController():
             ],
             stream=stream
         )
-        return self.completion.choices[0].message.content
+        return self.completion.choices[0].message.content # type: ignore

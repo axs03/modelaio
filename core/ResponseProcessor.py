@@ -11,10 +11,10 @@ class ResponseProcessor:
 
     
     def read_files(self):
-        for file_path in self.file_paths:
+        for file_path in self.file_paths: # type: ignore
             with open(file_path, "r") as file:
                 response = file.read()
-                key = self.clean_file_path(file_path)
+                key = self.clean_file_path(file_path) # type: ignore
                 self.responses[key] = response
     
 
