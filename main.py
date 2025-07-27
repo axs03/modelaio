@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from core.SimilarityModel import SimilarityModel
+from core import SimilarityModel
 
 app = FastAPI()
 sim = SimilarityModel()
@@ -24,7 +24,8 @@ class SimilarityResponse(BaseModel):
 @app.get(f"/{version}")
 def read_root():
     return {
-        "message": "Welcome to the model.aio backend!"
+        "message": "Welcome to the model.aio backend!",
+        "status": sim.STATUS
     }
 
 

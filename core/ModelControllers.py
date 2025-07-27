@@ -1,14 +1,13 @@
 import os
-from openai import OpenAI
 import dspy
 import json
 
-
-class LLMControllerDSPy():
+class LLMController():
     def __init__(self):
         self.models = {
             "openai/gpt-4o-mini" : ["OPENAI_API_KEY", None],
-            "deepseek/deepseek-chat" : ["DEEPSEEK_API_KEY", "https://api.deepseek.com"]
+            "deepseek/deepseek-chat" : ["DEEPSEEK_API_KEY", "https://api.deepseek.com"],
+            "claude-3-7-sonnet-20250219" : ["ANTHROPIC_API_KEY", "https://api.anthropic.com"]
         }
         self.init_models()
 
@@ -40,9 +39,4 @@ class LLMControllerDSPy():
         except Exception as e:
             raise Exception(f"Error in generating the responses: {e}")
 
-        # pretty print the responses
-        for model_name, response in responses.items():
-            print(f"Response from {model_name}:\n{response}\n")
-        # return the responses as a JSON string
-    
-        # return json.dumps(responses)
+        return responses
