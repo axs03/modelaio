@@ -1,33 +1,36 @@
-from typing import List
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from core import SimilarityModel
+from core import (
+    SimilarityModel, LLMController,
+    SimilarityPayload, SimilarityResponse, ChatPayload
+)
 
 app = FastAPI()
 sim = SimilarityModel()
-version = "v1"
-
-class SimilarityInputObjects(BaseModel):
-    model_name: str
-    content: str
-
-class SimilarityPayload(BaseModel):
-    base_model_idx: int
-    inputs: List[SimilarityInputObjects]
-
-class SimilarityResponse(BaseModel):
-    base_model_name: str
-    response: List[SimilarityInputObjects]
-    scores: List[float]
+llms = LLMController()
+VERSION = "v1"
 
 
-@app.get(f"/{version}")
+@app.get(f"/{VERSION}")
 def read_root():
     return {
         "message": "Welcome to the model.aio backend!",
         "status": sim.STATUS
     }
 
+
+@app.post(f"/{VERSION}/chat")
+def chat(payload: ChatPayload):
+    try:
+        response = llms.get_response(
+            selected_models=payload.models, # contains the encrypted secret and the model name
+            prompt=payload.prompt
+        )
+        return response
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error in generating responses: {str(e)}"
+        )
 
 # post request to find cosine similarity between two chunks of text
 """
@@ -52,9 +55,10 @@ def read_root():
 
 The base model will always be the first input in the inputs list.
 """
-@app.post(f"/{version}/similarity")
+@app.post(f"/{VERSION}/similarity")
 async def compute_similarity(payload: SimilarityPayload):
     try:
+        # two models are required to compare responses
         if len(payload.inputs) < 2:
             raise HTTPException(
                 status_code = 400, 
