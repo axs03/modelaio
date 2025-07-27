@@ -1,88 +1,73 @@
-from typing import List
 from fastapi import FastAPI, HTTPException
+from core import (
+    SimilarityModel, LLMController
+)
 from pydantic import BaseModel
-from core.SimilarityModel import SimilarityModel
+from typing import List
 
 app = FastAPI()
 sim = SimilarityModel()
-version = "v1"
+llms = LLMController()
+VERSION = "v1"
 
-class SimilarityInputObjects(BaseModel):
+
+class ChatPayloadObject(BaseModel):
     model_name: str
-    content: str
+    secret: str # needs to be encrypted
+class ChatPayload(BaseModel):
+    base_model_idx: int # index of the base model in the models list
+    models: List[ChatPayloadObject] # list of models with their names and encrypted secrets
+    prompt: str # query by the user
+class ChatPayloadResponse(BaseModel):
+    base_model_name: str # name of the base model
+    responses: list # list of the responses from the models
+    scores: list # list of the scores for each response
 
-class SimilarityPayload(BaseModel):
-    base_model_idx: int
-    inputs: List[SimilarityInputObjects]
 
-class SimilarityResponse(BaseModel):
-    base_model_name: str
-    response: List[SimilarityInputObjects]
-    scores: List[float]
-
-
-@app.get(f"/{version}")
+@app.get(f"/{VERSION}")
 def read_root():
     return {
-        "message": "Welcome to the model.aio backend!"
+        "message": "Welcome to the model.aio backend!",
+        "status": sim.STATUS
     }
 
 
-# post request to find cosine similarity between two chunks of text
-"""
-{
-    "base_model_idx": 1,
-    "inputs": [
-        {
-            "model_name": "name of model",
-            "content": "this is base sentence"
-        },
-        {
-            "model_name": "name of another model",
-            "content": "this is another sentence"
-        },
-        {
-            "model_name": "name of different model",
-            "content": "this is a different sentence"
-        },
-        .....
-    ]
-}
-
-The base model will always be the first input in the inputs list.
-"""
-@app.post(f"/{version}/similarity")
-async def compute_similarity(payload: SimilarityPayload):
+@app.post(f"/{VERSION}/chat")
+def chat(payload: ChatPayload):
     try:
-        if len(payload.inputs) < 2:
-            raise HTTPException(
-                status_code = 400, 
-                detail="Two models are required to compare responses."
-                )
-        
-        # get the base model
-        base_model = payload.base_model_idx
-        if base_model < 0 or base_model >= len(payload.inputs):
-            raise HTTPException(
-                status_code=400,
-                detail=f"base_model_idx {base_model} is out of range. It must be between 0 and {len(payload.inputs) - 1}."
+        scores = []
+        responses = llms.get_response(
+            selected_models=payload.models, # contains the encrypted secret and the model name
+            prompt=payload.prompt
+        )
+
+
+        base_model_response = responses[payload.base_model_idx].response # keep track of base model response
+        print(f"Base model response: {base_model_response}")
+        for response_idx in range(len(responses)):
+            if response_idx == payload.base_model_idx:
+                print(f"Skipping base model response at index {response_idx}")
+                continue # skip current iteration
+
+            # Compute cosine similarity with the base model response
+            curr_model_response = responses[response_idx].response
+            similarity_score = float(sim.get_cosine_similarity(base_model_response, curr_model_response))
+            scores.append(
+                {
+                    "model_name": payload.models[response_idx].model_name,
+                    "similarity_score": similarity_score
+                }
             )
 
-        scores = []
-        for i in range(len(payload.inputs)):
-            if i == base_model:
-                continue # skip this iteration if it is the base model
-
-            similarity_score = float(sim.get_cosine_similarity(payload.inputs[base_model].content, payload.inputs[i].content))
-            scores.append(similarity_score)
-
-        return SimilarityResponse(
-            base_model_name=payload.inputs[base_model].model_name,
-            response=payload.inputs,
+        return ChatPayloadResponse(
+            base_model_name=payload.models[payload.base_model_idx].model_name,
+            responses=responses,
             scores=scores
         )
-    # error catch for failed result
+
     except Exception as e:
-        return {
-            "error": str(e),
-        }
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error in generating responses: {str(e)}"
+        )
+

@@ -1,48 +1,77 @@
-import os
-from openai import OpenAI
+import dspy
+from pydantic import BaseModel
+
+RED = "\033[91m"
+GREEN = "\033[92m"
+RESET = "\033[0m"
+
+class ChatPayloadObject(BaseModel):
+    model_name: str
+    secret: str # needs to be encrypted
+class ChatPayloadResponseObject(BaseModel):
+    model_name: str
+    response: str
 
 class LLMController():
-    system_message = """You are a helpful assistant. Provide the answers to the questions based on what you know. 
-                        If you don't know the answer, say 'I don't know'.
-                        
-                        If an answer format is not stated, use the following format to forumlate your response:
-                        **Definition:** <definition>
-                        **Example:** <example>
-                        """
-    PROVIDERS = {
-        "openai": {
-            "model":   "gpt-4o-mini",
-            "env_var": "OPENAI_API_KEY",
-            "base_url": None
-        },
-        "deepseek": {
-            "model":   "deepseek-chat",
-            "env_var": "DEEPSEEK_API_KEY",
-            "base_url": "https://api.deepseek.com"
+    STATUS = str("OK")
+    def __init__(self):
+        self.models = {
+            # "model_name" : base_url
+            "openai/gpt-4o-mini" : None,
+            "deepseek/deepseek-chat" : "https://api.deepseek.com",
+            "claude-3-7-sonnet-20250219" : "https://api.anthropic.com"
         }
-    }
 
-    def __init__(self, provider, model=None, base_url=None):
-        config = self.PROVIDERS.get(provider)
-        if not config:
-            raise ValueError("No Provider is found, value is None")
 
-        self.model = model or config["model"]
-        ev = config["env_var"]
-        self.api_key = os.environ.get(ev)
-        if not self.api_key:
-            raise EnvironmentError(f"Missing environment variable: {ev}")
+    def create_model(self, model_name: str, api_key: str, base_url: str) -> dspy.LM:
+        """Create a model instance based on the model name and API key."""
+        try:
+            if model_name not in self.models.keys():
+                LLMController.STATUS = f"{RED}Model {model_name} is not supported.{RESET}"
+                raise Exception(f"Model {model_name} is not supported.")
+            
+            # decrypt the secret here, currently assuming the keys are all okay
+        except Exception as e:
+            LLMController.STATUS = f"{RED}{e}{RESET}"
+            raise
 
-        self.client = OpenAI(api_key=self.api_key, base_url=base_url or config["base_url"])
-        self.completion = None
+        try:
+            model_instance = dspy.LM(
+                model_name,
+                api_key=api_key,
+                base_url=base_url
+            )
 
-    def get_response(self, prompt, stream=False):
-        self.completion = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": self.system_message},
-                {"role": "user",   "content": prompt}
-            ],
-            stream=stream
-        )
-        return self.completion.choices[0].message.content # type: ignore
+            return model_instance
+        
+        except Exception as e:
+            LLMController.STATUS = f"{RED}{e}{RESET}"
+            raise Exception(f"Error in initializing models: {e}")
+
+
+    def get_response(self, selected_models, prompt: str):
+        """Get responses from the selected models based on the user prompt."""
+        responses = []
+        try:
+            for model in selected_models:
+                name = model.model_name
+                secret = model.secret
+
+                model_instance = self.create_model(
+                    model_name=name,
+                    api_key=secret,
+                    base_url=self.models[name]
+                )
+
+                response = model_instance(prompt)
+
+                responses.append(ChatPayloadResponseObject(
+                    model_name=name,
+                    response=response[0] # text in the response
+                ))
+
+        except Exception as e:
+            LLMController.STATUS = f"{RED}{e}{RESET}"
+            raise Exception(f"Error in generating the responses: {e}")
+
+        return responses
