@@ -1,6 +1,9 @@
 import dspy
 from pydantic import BaseModel
-from typing import List
+
+RED = "\033[91m"
+GREEN = "\033[92m"
+RESET = "\033[0m"
 
 class ChatPayloadObject(BaseModel):
     model_name: str
@@ -10,6 +13,7 @@ class ChatPayloadResponseObject(BaseModel):
     response: str
 
 class LLMController():
+    STATUS = str("OK")
     def __init__(self):
         self.models = {
             # "model_name" : base_url
@@ -23,10 +27,12 @@ class LLMController():
         """Create a model instance based on the model name and API key."""
         try:
             if model_name not in self.models.keys():
+                LLMController.STATUS = f"{RED}Model {model_name} is not supported.{RESET}"
                 raise Exception(f"Model {model_name} is not supported.")
             
             # decrypt the secret here, currently assuming the keys are all okay
         except Exception as e:
+            LLMController.STATUS = f"{RED}{e}{RESET}"
             raise
 
         try:
@@ -39,6 +45,7 @@ class LLMController():
             return model_instance
         
         except Exception as e:
+            LLMController.STATUS = f"{RED}{e}{RESET}"
             raise Exception(f"Error in initializing models: {e}")
 
 
@@ -64,6 +71,7 @@ class LLMController():
                 ))
 
         except Exception as e:
+            LLMController.STATUS = f"{RED}{e}{RESET}"
             raise Exception(f"Error in generating the responses: {e}")
 
         return responses

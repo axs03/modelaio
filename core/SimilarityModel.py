@@ -28,8 +28,8 @@ class SimilarityModel:
 
     def get_cosine_similarity(self, sentence1, sentence2):
         if not sentence1 or not sentence2:
-            SimilarityModel.STATUS = f"{RED}Both sentences are required to compute cosine similarity.{RESET}"
-            raise ValueError("Both sentences are required to compute cosine similarity.")
+            SimilarityModel.STATUS = f"{RED}Two sentences are required to compute cosine similarity.{RESET}"
+            raise ValueError("Two sentences are required to compute cosine similarity.")
 
         try:
             # Tokenize sentences
