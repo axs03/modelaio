@@ -8,7 +8,6 @@ from typing import List
 app = FastAPI()
 sim = SimilarityModel()
 llms = LLMController()
-VERSION = "v1"
 
 
 class ChatPayloadObject(BaseModel):
@@ -24,7 +23,7 @@ class ChatPayloadResponse(BaseModel):
     scores: list # list of the scores for each response
 
 
-@app.get(f"/{VERSION}")
+@app.get(f"/")
 def read_root():
     return {
         "message": "Welcome to the model.aio backend!",
@@ -32,11 +31,11 @@ def read_root():
     }
 
 
-@app.post(f"/{VERSION}/chat")
-def chat(payload: ChatPayload):
+@app.post("/get_responses_with_similarity")
+async def get_responses_with_similarity(payload: ChatPayload):
     try:
         scores = []
-        responses = llms.get_response(
+        responses = await llms.get_responses_async(
             selected_models=payload.models, # contains the encrypted secret and the model name
             prompt=payload.prompt
         )
@@ -71,3 +70,21 @@ def chat(payload: ChatPayload):
             detail=f"Error in generating responses: {str(e)}"
         )
 
+
+@app.post("/get_responses")
+async def get_responses(payload: ChatPayload):
+    """Endpoint to get responses from the models based on the user prompt."""
+    try:
+        responses = await llms.get_responses_async(
+            selected_models=payload.models, # contains the encrypted secret and the model name
+            prompt=payload.prompt
+        )
+
+        return responses
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error in generating responses: {str(e)}"
+        )
+    

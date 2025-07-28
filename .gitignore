@@ -175,3 +175,5 @@ cython_debug/
 
 /tests
 /misc
+
+/node_modules/
