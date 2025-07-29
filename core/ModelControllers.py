@@ -1,18 +1,13 @@
 import dspy
 import asyncio
-from pydantic import BaseModel
+from typing import List
+from .types import SendSingleResponseObject, GetSingleResponseObject
 
 RED = "\033[91m"
 YELLOW = "\033[93m"
 GREEN = "\033[92m"
 RESET = "\033[0m"
 
-class ChatPayloadObject(BaseModel):
-    model_name: str
-    secret: str # needs to be encrypted
-class ChatPayloadResponseObjectNoScore(BaseModel):
-    model_name: str
-    response: str
 
 class LLMController():
     STATUS = str("OK")
@@ -51,7 +46,7 @@ class LLMController():
             raise Exception(f"Error in initializing models: {e}")
 
 
-    async def _get_single_response(self, model_name: str, secret: str,prompt: str):
+    async def _get_single_response(self, model_name: str, secret: str, prompt: str):
         """Get a single response from the model."""
         try:
             model_instance = self._create_model(
@@ -62,7 +57,7 @@ class LLMController():
 
             model_response = await model_instance.aforward(prompt)
 
-            print(f"{RED}{model_response.choices[0].message.content}{RESET}")
+            print(f"{RED}{model_name}{RESET}{YELLOW}{model_response.choices[0].message.content}\n\n{RESET}")
 
             return model_response.choices[0].message.content # extracts the content from the response
 
@@ -71,39 +66,25 @@ class LLMController():
             raise Exception(f"Error in generating the response: {e}")
 
 
-    async def get_responses_async(self, selected_models: list, prompt: str):
+    async def get_single_response_async(self, selected_model: SendSingleResponseObject, prompt: str) -> GetSingleResponseObject:
         """Get responses from the selected models based on the user prompt."""
-        tasks = []
         try:
-            for model in selected_models:
-                task = self._get_single_response( # async func is coroutine, doesn't run yet
-                    model_name=model.model_name,
-                    secret=model.secret,
-                    prompt=prompt
+            generated_response = await self._get_single_response(
+                model_name=selected_model.model_name,
+                secret=selected_model.secret,
+                prompt=prompt
+            )
+
+            if isinstance(generated_response, Exception):
+                return GetSingleResponseObject(
+                    model_name=selected_model.model_name,
+                    response="There was an error generating an answer. Please try again later."
                 )
-                tasks.append(task)
-
-            generated_responses = await asyncio.gather(*tasks, return_exceptions=True) # unpack all the tasks
-
-            # check if the recieved response is valid, otherwise return error string for the model
-            responses = []
-            for i, response in enumerate(generated_responses):
-                if isinstance(response, Exception):
-                    responses.append(
-                        ChatPayloadResponseObjectNoScore(
-                            model_name=selected_models[i].model_name,
-                            response="There was an error generating an answer. Please try again later."
-                        )
-                    )
-                else:
-                    responses.append(
-                        ChatPayloadResponseObjectNoScore(
-                            model_name=selected_models[i].model_name,
-                            response=str(response))
-                    )
-
-            print(f"{RED}{responses}{RESET}")
-            return responses
+            else:
+                return GetSingleResponseObject(
+                    model_name=selected_model.model_name,
+                    response=str(generated_response)
+                )
 
         except Exception as e:
             LLMController.STATUS = f"{RED}{e}{RESET}"
