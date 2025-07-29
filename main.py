@@ -1,10 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from core import (
-    SimilarityModel, LLMController
+    SimilarityModel, LLMController,
+    SendSingleResponsePayload, GetSingleResponseObject, SendSimilarityScorePayload, 
+    GetSimilarityScorePayload, GetSimilarityScoreObject
 )
-from core.types import (
-    SendSingleResponsePayload, GetSingleResponseObject, SendSingleResponseObject
-)
+import asyncio
 
 app = FastAPI()
 sim = SimilarityModel()
@@ -20,8 +20,51 @@ def read_root():
 
 
 @app.post("/get_similarity_score")
-async def get_similarity_score(payload):
-    pass
+async def get_similarity_score(payload: SendSimilarityScorePayload) -> GetSimilarityScorePayload:
+    base_model_idx = payload.base_model_idx
+    base_model = payload.content[base_model_idx]
+    base_model_content = base_model.content
+
+    try:
+        # similarity computations in thread pool for concurrency
+        loop = asyncio.get_event_loop()
+        tasks = []
+        
+        for item in payload.content:
+            task = loop.run_in_executor(
+                None,
+                sim.get_cosine_similarity,
+                base_model_content,
+                item.content
+            )
+            tasks.append(task)
+
+        scores = await asyncio.gather(*tasks, return_exceptions=True)
+
+        results = []
+        for i, (item, score) in enumerate(zip(payload.content, scores)):
+            if i == base_model_idx:
+                continue # do not include the base model in results
+
+            if isinstance(score, Exception):
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error computing similarity for {item.model_name}: {str(score)}"
+                )
+            results.append(GetSimilarityScoreObject(
+                model_name=item.model_name,
+                similarity_score=float(score) # type:ignore
+            ))
+
+        return GetSimilarityScorePayload(
+            base_model_name=base_model.model_name,
+            content=results
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error in computing similarity scores: {str(e)}"
+        )
 
 
 @app.post("/get_response")
