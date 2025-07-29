@@ -1,30 +1,17 @@
 from fastapi import FastAPI, HTTPException
 from core import (
-    SimilarityModel, LLMController
+    SimilarityModel, LLMController,
+    SendSingleResponsePayload, GetSingleResponseObject, SendSimilarityScorePayload, 
+    GetSimilarityScorePayload, GetSimilarityScoreObject
 )
-from pydantic import BaseModel
-from typing import List
+import asyncio
 
 app = FastAPI()
 sim = SimilarityModel()
-llms = LLMController()
-VERSION = "v1"
+llm = LLMController()
 
 
-class ChatPayloadObject(BaseModel):
-    model_name: str
-    secret: str # needs to be encrypted
-class ChatPayload(BaseModel):
-    base_model_idx: int # index of the base model in the models list
-    models: List[ChatPayloadObject] # list of models with their names and encrypted secrets
-    prompt: str # query by the user
-class ChatPayloadResponse(BaseModel):
-    base_model_name: str # name of the base model
-    responses: list # list of the responses from the models
-    scores: list # list of the scores for each response
-
-
-@app.get(f"/{VERSION}")
+@app.get(f"/")
 def read_root():
     return {
         "message": "Welcome to the model.aio backend!",
@@ -32,42 +19,68 @@ def read_root():
     }
 
 
-@app.post(f"/{VERSION}/chat")
-def chat(payload: ChatPayload):
+@app.post("/get_similarity_score")
+async def get_similarity_score(payload: SendSimilarityScorePayload) -> GetSimilarityScorePayload:
+    base_model_idx = payload.base_model_idx
+    base_model = payload.content[base_model_idx]
+    base_model_content = base_model.content
+
     try:
-        scores = []
-        responses = llms.get_response(
-            selected_models=payload.models, # contains the encrypted secret and the model name
+        # similarity computations in thread pool for concurrency
+        loop = asyncio.get_event_loop()
+        tasks = []
+        
+        for item in payload.content:
+            task = loop.run_in_executor(
+                None,
+                sim.get_cosine_similarity,
+                base_model_content,
+                item.content
+            )
+            tasks.append(task)
+
+        scores = await asyncio.gather(*tasks, return_exceptions=True)
+
+        results = []
+        for i, (item, score) in enumerate(zip(payload.content, scores)):
+            if i == base_model_idx:
+                continue # do not include the base model in results
+
+            if isinstance(score, Exception):
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error computing similarity for {item.model_name}: {str(score)}"
+                )
+            results.append(GetSimilarityScoreObject(
+                model_name=item.model_name,
+                similarity_score=float(score) # type:ignore
+            ))
+
+        return GetSimilarityScorePayload(
+            base_model_name=base_model.model_name,
+            content=results
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error in computing similarity scores: {str(e)}"
+        )
+
+
+@app.post("/get_response")
+async def get_response(payload: SendSingleResponsePayload) -> GetSingleResponseObject:
+    """Endpoint to get responses from a model based on the user prompt."""
+    try:
+        response = await llm.get_single_response_async(
+            selected_model=payload.model_data, # passing the model object
             prompt=payload.prompt
         )
 
-
-        base_model_response = responses[payload.base_model_idx].response # keep track of base model response
-        print(f"Base model response: {base_model_response}")
-        for response_idx in range(len(responses)):
-            if response_idx == payload.base_model_idx:
-                print(f"Skipping base model response at index {response_idx}")
-                continue # skip current iteration
-
-            # Compute cosine similarity with the base model response
-            curr_model_response = responses[response_idx].response
-            similarity_score = float(sim.get_cosine_similarity(base_model_response, curr_model_response))
-            scores.append(
-                {
-                    "model_name": payload.models[response_idx].model_name,
-                    "similarity_score": similarity_score
-                }
-            )
-
-        return ChatPayloadResponse(
-            base_model_name=payload.models[payload.base_model_idx].model_name,
-            responses=responses,
-            scores=scores
-        )
+        return response
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Error in generating responses: {str(e)}"
         )
-
+    
