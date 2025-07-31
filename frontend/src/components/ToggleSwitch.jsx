@@ -11,7 +11,7 @@ const ToggleSwitch = ({ isEnabled, onToggle, label }) => (
         <span className="text-gray-300">{label}</span>
         <button
             onClick={onToggle}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none ${isEnabled ? 'bg-blue-600' : 'bg-gray-600'
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none ${isEnabled ? 'bg-indigo-600' : 'bg-gray-600'
                 }`}
         >
             <span
