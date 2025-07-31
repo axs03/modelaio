@@ -15,16 +15,15 @@ const SettingsModal = ({ isOpen, onClose }) => {
     const [enableGpt4, setEnableGpt4] = useState(false);
     const [setAsBaseline, setSetAsBaseline] = useState(false);
     const [apiKey, setApiKey] = useState('');
-
     const models = ['OpenAI', 'DeepSeek', 'Claude', 'Google Gemini'];
 
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-60 z-40 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center p-4 transition-opacity duration-300"
             onClick={onClose}
         >
             <div
-                className="bg-gray-800 border border-gray-700 text-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-6 relative"
+                className="bg-gray-900/70 backdrop-blur-xl border border-white/10 text-white rounded-lg shadow-2xl w-full max-w-md p-6 space-y-6 relative"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
@@ -37,15 +36,15 @@ const SettingsModal = ({ isOpen, onClose }) => {
                             key={model}
                             onClick={() => setSelectedModel(model)}
                             className={`p-3 rounded-md text-sm font-semibold transition-all duration-200 ${selectedModel === model
-                                    ? 'bg-indigo-600 text-white shadow-lg'
-                                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                    ? 'bg-blue-600 text-white shadow-lg'
+                                    : 'bg-gray-700/50 hover:bg-gray-600/50 text-gray-300'
                                 }`}
                         >
                             {model}
                         </button>
                     ))}
                 </div>
-                <hr className="border-gray-700" />
+                <hr className="border-white/10" />
                 <div className="space-y-4">
                     <ToggleSwitch
                         label="Enable OpenAI GPT-4"
@@ -58,7 +57,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                         onToggle={() => setSetAsBaseline(!setAsBaseline)}
                     />
                 </div>
-                <hr className="border-gray-700" />
+                <hr className="border-white/10" />
                 <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                         OpenAI API Key
@@ -69,14 +68,14 @@ const SettingsModal = ({ isOpen, onClose }) => {
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
                             placeholder="sk-..."
-                            className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2.5 pl-4 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full bg-gray-700/50 border border-white/10 rounded-lg py-2.5 pl-4 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
                             <EyeIcon />
                         </button>
                     </div>
                 </div>
-                <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200">
+                <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
                     <SaveIcon />
                     <span>Save Keys</span>
                 </button>

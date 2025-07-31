@@ -47,8 +47,8 @@ const ChatWindow = () => {
     };
 
     return (
-        <div className="flex flex-col flex-1">
-            <header className="p-6 border-b border-gray-700/50">
+        <div className="flex flex-col flex-1 bg-black/10 backdrop-blur-lg">
+            <header className="p-6 border-b border-white/10">
                 <h1 className="text-xl font-semibold text-white">Chat</h1>
             </header>
             <main className="flex-1 overflow-y-auto p-8 space-y-8">
@@ -57,7 +57,7 @@ const ChatWindow = () => {
                 ))}
                 <div ref={chatEndRef} />
             </main>
-            <footer className="p-6 bg-gray-800">
+            <footer className="p-6 bg-gray-800/50 border-t border-white/10">
                 <div className="relative">
                     <input
                         type="text"
@@ -65,11 +65,11 @@ const ChatWindow = () => {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder="Type your message here..."
-                        className="w-full bg-gray-700 border border-transparent rounded-lg py-3 pl-4 pr-14 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-3 pl-4 pr-14 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
                         onClick={handleSend}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                     >
                         <SendIcon />
                     </button>

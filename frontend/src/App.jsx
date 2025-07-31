@@ -14,7 +14,7 @@ function App() {
 
   return (
     <>
-      <div className="flex h-screen w-full bg-red-500 text-white font-sans">
+      <div className="flex h-screen w-full text-white font-sans overflow-hidden">
         <Sidebar onSettingsClick={() => setIsSettingsOpen(true)} />
         <ChatWindow />
       </div>
