@@ -1,21 +1,35 @@
 /*
 ================================================================================
 | FILE: src/components/SettingsModal.jsx
-| DESCRIPTION: The settings modal pop-up.
+| DESCRIPTION: The settings modal pop-up with the new model switcher.
 ================================================================================
 */
 import React, { useState } from 'react';
 import ToggleSwitch from './ToggleSwitch';
 import { XIcon, EyeIcon, SaveIcon } from './Icons';
 
+// --- Simple Arrow Icons for the new switcher ---
+const LeftArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>;
+const RightArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>;
+
+
 const SettingsModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
-    const [selectedModel, setSelectedModel] = useState('OpenAI');
+    const models = ['OpenAI', 'DeepSeek', 'Claude', 'Google Gemini'];
+    const [selectedModelIndex, setSelectedModelIndex] = useState(0);
+
     const [enableGpt4, setEnableGpt4] = useState(false);
     const [setAsBaseline, setSetAsBaseline] = useState(false);
     const [apiKey, setApiKey] = useState('');
-    const models = ['OpenAI', 'DeepSeek', 'Claude', 'Google Gemini'];
+
+    const handlePrevModel = () => {
+        setSelectedModelIndex((prevIndex) => (prevIndex - 1 + models.length) % models.length);
+    };
+
+    const handleNextModel = () => {
+        setSelectedModelIndex((prevIndex) => (prevIndex + 1) % models.length);
+    };
 
     return (
         <div
@@ -30,20 +44,24 @@ const SettingsModal = ({ isOpen, onClose }) => {
                     <XIcon />
                 </button>
                 <h2 className="text-xl font-semibold text-white">Settings</h2>
-                <div className="grid grid-cols-2 gap-3">
-                    {models.map(model => (
-                        <button
-                            key={model}
-                            onClick={() => setSelectedModel(model)}
-                            className={`p-3 rounded-md text-sm font-semibold transition-all duration-200 ${selectedModel === model
-                                    ? 'bg-blue-600 text-white shadow-lg'
-                                    : 'bg-gray-700/50 hover:bg-gray-600/50 text-gray-300'
-                                }`}
-                        >
-                            {model}
+
+                {/* --- NEW MODEL SWITCHER --- */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Active Model
+                    </label>
+                    <div className="flex items-center justify-between bg-gray-700/50 rounded-lg p-2 border border-white/10">
+                        <button onClick={handlePrevModel} className="p-2 rounded-full hover:bg-white/10 transition-colors">
+                            <LeftArrowIcon />
                         </button>
-                    ))}
+                        <span className="font-semibold text-lg text-white w-40 text-center">{models[selectedModelIndex]}</span>
+                        <button onClick={handleNextModel} className="p-2 rounded-full hover:bg-white/10 transition-colors">
+                            <RightArrowIcon />
+                        </button>
+                    </div>
                 </div>
+                {/* --- END OF NEW MODEL SWITCHER --- */}
+
                 <hr className="border-white/10" />
                 <div className="space-y-4">
                     <ToggleSwitch
