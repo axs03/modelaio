@@ -8,7 +8,7 @@ import React from 'react';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
 
-// App is now simpler and no longer manages views.
+// The App component is now simple again. It does not need to manage views.
 function App() {
   return (
     <div className="flex h-screen w-full text-white font-sans overflow-hidden">

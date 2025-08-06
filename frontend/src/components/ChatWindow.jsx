@@ -1,7 +1,7 @@
 /*
 ================================================================================
 | FILE: src/components/ChatWindow.jsx
-| DESCRIPTION: The main chat area, including messages and the input form.
+| ACTION: Replace the entire content of this file with the code below.
 ================================================================================
 */
 import React, { useState, useRef, useEffect } from 'react';
@@ -18,6 +18,7 @@ const ChatWindow = () => {
         },
     ]);
     const [input, setInput] = useState('');
+    const [isAiTyping, setIsAiTyping] = useState(false); // NEW state for loading animation
     const chatEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -26,20 +27,27 @@ const ChatWindow = () => {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, isAiTyping]); // Scroll to bottom when AI starts typing too
 
     const handleSend = () => {
         if (input.trim() === '') return;
         const timestamp = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
         const userMessage = { id: Date.now(), text: input, sender: 'user', timestamp };
+
+        // Add user message and immediately show the loader
         setMessages((prevMessages) => [...prevMessages, userMessage]);
         setInput('');
+        setIsAiTyping(true);
 
         // --- Backend Integration Point ---
+        // Simulate a delay for the AI response
         setTimeout(() => {
             const aiResponse = { id: Date.now() + 1, text: `This is a simulated response to: "${userMessage.text}"`, sender: 'ai', timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true }) };
+
+            // Hide the loader and then add the AI's message
+            setIsAiTyping(false);
             setMessages((prevMessages) => [...prevMessages, aiResponse]);
-        }, 1500);
+        }, 2000); // Increased delay to make animation noticeable
     };
 
     const handleKeyPress = (e) => {
@@ -55,6 +63,8 @@ const ChatWindow = () => {
                 {messages.map((msg) => (
                     <ChatMessage key={msg.id} message={msg} />
                 ))}
+                {/* Conditionally render the typing indicator */}
+                {isAiTyping && <ChatMessage isTyping={true} />}
                 <div ref={chatEndRef} />
             </main>
             <footer className="p-6 bg-gray-800/50 border-t border-white/10">
@@ -66,10 +76,12 @@ const ChatWindow = () => {
                         onKeyPress={handleKeyPress}
                         placeholder="Type your message here..."
                         className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-3 pl-4 pr-14 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={isAiTyping} // Optionally disable input while AI is typing
                     />
                     <button
                         onClick={handleSend}
                         className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                        disabled={isAiTyping} // Optionally disable button while AI is typing
                     >
                         <SendIcon />
                     </button>

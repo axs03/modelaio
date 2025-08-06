@@ -9,17 +9,22 @@ import { PlusIcon, SettingsIcon, UserIcon, BotIcon, EyeIcon, SaveIcon } from './
 import ToggleSwitch from './ToggleSwitch';
 
 const Sidebar = () => {
-    // This state now controls whether to show chat history or settings
+    // This state controls whether the sidebar shows chat history or settings
     const [view, setView] = useState('chat');
 
-    // All the state for settings now lives inside the Sidebar
+    // State for the settings panel now lives here
     const [selectedModel, setSelectedModel] = useState('OpenAI');
     const [enableGpt4, setEnableGpt4] = useState(false);
     const [setAsBaseline, setSetAsBaseline] = useState(false);
     const [apiKey, setApiKey] = useState('');
     const models = ['OpenAI', 'DeepSeek', 'Claude', 'Google Gemini'];
 
-    // This function decides whether to render the settings or the chat history area
+    // The "New Chat" button refreshes the page
+    const handleNewChat = () => {
+        window.location.reload();
+    };
+
+    // This function renders the correct content (settings or chat history)
     const renderContent = () => {
         if (view === 'settings') {
             return (
@@ -75,7 +80,7 @@ const Sidebar = () => {
                 </div>
             );
         }
-        // Default view is to show chat history (or a placeholder)
+        // Default view shows a placeholder for chat history
         return (
             <div className="flex-grow mt-6">
                 <p className="text-gray-500 text-center text-sm px-4">Your chat history will appear here.</p>
@@ -93,7 +98,7 @@ const Sidebar = () => {
                 <span className="font-bold text-xl text-white">Mr Dork</span>
             </div>
             <button
-                onClick={() => setView('chat')}
+                onClick={handleNewChat}
                 className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-all duration-200 shadow-lg"
             >
                 <PlusIcon />
@@ -105,7 +110,7 @@ const Sidebar = () => {
 
             {/* Bottom Section */}
             <div className="mt-auto flex-shrink-0 border-t border-white/10 pt-4">
-                {/* "Back to Chat" button now appears at the bottom in settings view */}
+                {/* The "Back to Chat" button now only shows in settings view */}
                 {view === 'settings' && (
                     <button
                         onClick={() => setView('chat')}

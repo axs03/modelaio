@@ -1,7 +1,7 @@
 /*
 ================================================================================
 | FILE: src/index.css
-| DESCRIPTION: Main CSS file with custom background for glassmorphism.
+| ACTION: Replace the entire content of this file with the code below.
 ================================================================================
 */
 @tailwind base;
@@ -22,4 +22,30 @@ body {
   background-position: center;
   background-size: cover;
   background-attachment: fixed;
+}
+
+/* --- NEW Animation for Loading Dots --- */
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: #a0aec0;
+  /* gray-400 */
+  border-radius: 50%;
+}
+
+@keyframes dot-bounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+
+  40% {
+    transform: scale(1.0);
+  }
+}
+
+.animate-dot-bounce {
+  animation: dot-bounce 1.4s infinite ease-in-out both;
 }
