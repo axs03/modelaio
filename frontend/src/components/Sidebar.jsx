@@ -8,30 +8,86 @@ import React, { useState } from 'react';
 import { PlusIcon, SettingsIcon, UserIcon, BotIcon, EyeIcon, SaveIcon } from './Icons';
 import ToggleSwitch from './ToggleSwitch';
 
+// --- NEW: Configuration object for model-specific settings ---
+const modelConfigurations = {
+    'OpenAI': {
+        apiKeyLabel: 'OpenAI API Key',
+        toggles: [
+            { id: 'enableGpt4', label: 'Enable OpenAI GPT-4' },
+            { id: 'setAsBaseline', label: 'Set as Baseline Model' }
+        ]
+    },
+    'DeepSeek': {
+        apiKeyLabel: 'DeepSeek API Key',
+        toggles: [
+            { id: 'useCoderModel', label: 'Use DeepSeek Coder' },
+            { id: 'enableStreaming', label: 'Enable Streaming' }
+        ]
+    },
+    'Claude': {
+        apiKeyLabel: 'Anthropic API Key',
+        toggles: [
+            { id: 'useSonnet', label: 'Use Claude 3.5 Sonnet' },
+            { id: 'enableMemory', label: 'Enable Long-term Memory' }
+        ]
+    },
+    'Google Gemini': {
+        apiKeyLabel: 'Google Gemini API Key',
+        toggles: [
+            { id: 'useGeminiPro', label: 'Enable Gemini 1.5 Pro' },
+            { id: 'useSafetyFilter', label: 'Use Safety Filter' }
+        ]
+    }
+};
+
 const Sidebar = () => {
-    // This state controls whether the sidebar shows chat history or settings
     const [view, setView] = useState('chat');
-
-    // State for the settings panel now lives here
     const [selectedModel, setSelectedModel] = useState('OpenAI');
-    const [enableGpt4, setEnableGpt4] = useState(false);
-    const [setAsBaseline, setSetAsBaseline] = useState(false);
-    const [apiKey, setApiKey] = useState('');
-    const models = ['OpenAI', 'DeepSeek', 'Claude', 'Google Gemini'];
 
-    // The "New Chat" button refreshes the page
+    // --- NEW: A single state object to hold all settings for all models ---
+    const [settings, setSettings] = useState({
+        'OpenAI': { enableGpt4: false, setAsBaseline: false, apiKey: '' },
+        'DeepSeek': { useCoderModel: true, enableStreaming: false, apiKey: '' },
+        'Claude': { useSonnet: true, enableMemory: true, apiKey: '' },
+        'Google Gemini': { useGeminiPro: false, useSafetyFilter: true, apiKey: '' }
+    });
+
     const handleNewChat = () => {
         window.location.reload();
     };
 
-    // This function renders the correct content (settings or chat history)
+    // --- NEW: Generic handler for toggle changes ---
+    const handleToggleChange = (toggleId) => {
+        setSettings(prevSettings => ({
+            ...prevSettings,
+            [selectedModel]: {
+                ...prevSettings[selectedModel],
+                [toggleId]: !prevSettings[selectedModel][toggleId]
+            }
+        }));
+    };
+
+    // --- NEW: Generic handler for API key changes ---
+    const handleApiKeyChange = (event) => {
+        const newApiKey = event.target.value;
+        setSettings(prevSettings => ({
+            ...prevSettings,
+            [selectedModel]: {
+                ...prevSettings[selectedModel],
+                apiKey: newApiKey
+            }
+        }));
+    };
+
     const renderContent = () => {
         if (view === 'settings') {
+            const currentConfig = modelConfigurations[selectedModel];
+            const currentSettings = settings[selectedModel];
+
             return (
-                // Settings Panel UI
                 <div className="flex flex-col flex-grow mt-6 animate-fade-in">
                     <div className="grid grid-cols-2 gap-2 mb-6">
-                        {models.map(model => (
+                        {Object.keys(modelConfigurations).map(model => (
                             <button
                                 key={model}
                                 onClick={() => setSelectedModel(model)}
@@ -44,27 +100,27 @@ const Sidebar = () => {
                             </button>
                         ))}
                     </div>
+
+                    {/* --- DYNAMICALLY RENDERED SETTINGS --- */}
                     <div className="space-y-4 mb-6">
-                        <ToggleSwitch
-                            label="Enable OpenAI GPT-4"
-                            isEnabled={enableGpt4}
-                            onToggle={() => setEnableGpt4(!enableGpt4)}
-                        />
-                        <ToggleSwitch
-                            label="Set as Baseline Model"
-                            isEnabled={setAsBaseline}
-                            onToggle={() => setSetAsBaseline(!setAsBaseline)}
-                        />
+                        {currentConfig.toggles.map(toggle => (
+                            <ToggleSwitch
+                                key={toggle.id}
+                                label={toggle.label}
+                                isEnabled={currentSettings[toggle.id]}
+                                onToggle={() => handleToggleChange(toggle.id)}
+                            />
+                        ))}
                     </div>
                     <div className="mb-6">
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                            OpenAI API Key
+                            {currentConfig.apiKeyLabel}
                         </label>
                         <div className="relative">
                             <input
                                 type="password"
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
+                                value={currentSettings.apiKey}
+                                onChange={handleApiKeyChange}
                                 placeholder="sk-..."
                                 className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-2.5 pl-4 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
@@ -73,6 +129,8 @@ const Sidebar = () => {
                             </button>
                         </div>
                     </div>
+                    {/* --- END OF DYNAMIC SETTINGS --- */}
+
                     <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
                         <SaveIcon />
                         <span>Save Keys</span>
@@ -80,7 +138,6 @@ const Sidebar = () => {
                 </div>
             );
         }
-        // Default view shows a placeholder for chat history
         return (
             <div className="flex-grow mt-6">
                 <p className="text-gray-500 text-center text-sm px-4">Your chat history will appear here.</p>
@@ -90,7 +147,6 @@ const Sidebar = () => {
 
     return (
         <div className="w-80 bg-black/20 backdrop-blur-lg border-r border-white/10 p-6 flex flex-col flex-shrink-0">
-            {/* Top Section */}
             <div className="flex items-center space-x-3 mb-8">
                 <div className="p-2 bg-blue-600 rounded-lg shadow-lg">
                     <BotIcon />
@@ -105,12 +161,9 @@ const Sidebar = () => {
                 <span>New Chat</span>
             </button>
 
-            {/* Main Content Area (renders either settings or chat history) */}
             {renderContent()}
 
-            {/* Bottom Section */}
             <div className="mt-auto flex-shrink-0 border-t border-white/10 pt-4">
-                {/* The "Back to Chat" button now only shows in settings view */}
                 {view === 'settings' && (
                     <button
                         onClick={() => setView('chat')}
