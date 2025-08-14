@@ -8,66 +8,44 @@ import React, { useState } from 'react';
 import { PlusIcon, SettingsIcon, UserIcon, BotIcon, EyeIcon, SaveIcon } from './Icons';
 import ToggleSwitch from './ToggleSwitch';
 
-// --- NEW: Configuration object for model-specific settings ---
-const modelConfigurations = {
-    'OpenAI': {
-        apiKeyLabel: 'OpenAI API Key',
-        toggles: [
-            { id: 'enableGpt4', label: 'Enable OpenAI GPT-4' },
-            { id: 'setAsBaseline', label: 'Set as Baseline Model' }
-        ]
-    },
-    'DeepSeek': {
-        apiKeyLabel: 'DeepSeek API Key',
-        toggles: [
-            { id: 'useCoderModel', label: 'Use DeepSeek Coder' },
-            { id: 'enableStreaming', label: 'Enable Streaming' }
-        ]
-    },
-    'Claude': {
-        apiKeyLabel: 'Anthropic API Key',
-        toggles: [
-            { id: 'useSonnet', label: 'Use Claude 3.5 Sonnet' },
-            { id: 'enableMemory', label: 'Enable Long-term Memory' }
-        ]
-    },
-    'Google Gemini': {
-        apiKeyLabel: 'Google Gemini API Key',
-        toggles: [
-            { id: 'useGeminiPro', label: 'Enable Gemini 1.5 Pro' },
-            { id: 'useSafetyFilter', label: 'Use Safety Filter' }
-        ]
-    }
-};
-
-const Sidebar = () => {
+// The Sidebar now receives its state and configuration as props
+const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
     const [view, setView] = useState('chat');
     const [selectedModel, setSelectedModel] = useState('OpenAI');
-
-    // --- NEW: A single state object to hold all settings for all models ---
-    const [settings, setSettings] = useState({
-        'OpenAI': { enableGpt4: false, setAsBaseline: false, apiKey: '' },
-        'DeepSeek': { useCoderModel: true, enableStreaming: false, apiKey: '' },
-        'Claude': { useSonnet: true, enableMemory: true, apiKey: '' },
-        'Google Gemini': { useGeminiPro: false, useSafetyFilter: true, apiKey: '' }
-    });
 
     const handleNewChat = () => {
         window.location.reload();
     };
 
-    // --- NEW: Generic handler for toggle changes ---
-    const handleToggleChange = (toggleId) => {
-        setSettings(prevSettings => ({
-            ...prevSettings,
-            [selectedModel]: {
-                ...prevSettings[selectedModel],
-                [toggleId]: !prevSettings[selectedModel][toggleId]
+    const handleToggleChange = (modelName, toggleId) => {
+        setSettings(prevSettings => {
+            const newSettings = JSON.parse(JSON.stringify(prevSettings)); // Deep copy
+            const currentModelSettings = newSettings[modelName];
+
+            // New logic for baseline selection
+            if (toggleId === 'isBaseline') {
+                if (!currentModelSettings.isBaseline) { // If turning baseline ON
+                    // Turn off baseline for all other models
+                    for (const key in newSettings) {
+                        newSettings[key].isBaseline = false;
+                    }
+                    // Turn on baseline and enable for the current model
+                    currentModelSettings.isBaseline = true;
+                    currentModelSettings.enabled = true;
+                }
+            } else {
+                // Standard toggle logic
+                currentModelSettings[toggleId] = !currentModelSettings[toggleId];
+                // If a model is disabled, it cannot be the baseline
+                if (toggleId === 'enabled' && !currentModelSettings.enabled) {
+                    currentModelSettings.isBaseline = false;
+                }
             }
-        }));
+
+            return newSettings;
+        });
     };
 
-    // --- NEW: Generic handler for API key changes ---
     const handleApiKeyChange = (event) => {
         const newApiKey = event.target.value;
         setSettings(prevSettings => ({
@@ -92,8 +70,8 @@ const Sidebar = () => {
                                 key={model}
                                 onClick={() => setSelectedModel(model)}
                                 className={`p-3 rounded-md text-sm font-semibold transition-all duration-200 border ${selectedModel === model
-                                    ? 'bg-white/20 border-white/30 text-white shadow-lg'
-                                    : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
+                                        ? 'bg-white/20 border-white/30 text-white shadow-lg'
+                                        : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
                                     }`}
                             >
                                 {model}
@@ -101,14 +79,13 @@ const Sidebar = () => {
                         ))}
                     </div>
 
-                    {/* --- DYNAMICALLY RENDERED SETTINGS --- */}
                     <div className="space-y-4 mb-6">
                         {currentConfig.toggles.map(toggle => (
                             <ToggleSwitch
                                 key={toggle.id}
                                 label={toggle.label}
                                 isEnabled={currentSettings[toggle.id]}
-                                onToggle={() => handleToggleChange(toggle.id)}
+                                onToggle={() => handleToggleChange(selectedModel, toggle.id)}
                             />
                         ))}
                     </div>
@@ -129,7 +106,6 @@ const Sidebar = () => {
                             </button>
                         </div>
                     </div>
-                    {/* --- END OF DYNAMIC SETTINGS --- */}
 
                     <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
                         <SaveIcon />
