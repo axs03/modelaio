@@ -9,20 +9,9 @@ import { PlusIcon, SettingsIcon, UserIcon, BotIcon, EyeIcon, SaveIcon } from './
 import ToggleSwitch from './ToggleSwitch';
 
 // The Sidebar now receives its state and configuration as props
-const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
+const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChatId, onNewChat, onSelectChat }) => {
     const [view, setView] = useState('chat');
     const [selectedModel, setSelectedModel] = useState('OpenAI');
-    const [chats, setChats] = useState([]);
-
-    const handleNewChat = () => {
-        const newChat = {
-            id: Date.now(),
-            title: 'New Chat',
-            subtitle: 'Start a new conversation...'
-        };
-        setChats(prevChats => [...prevChats, newChat]);
-        setView('chat');
-    };
 
     const handleSettingsToggle = () => {
         setView(prevView => prevView === 'settings' ? 'chat' : 'settings');
@@ -120,13 +109,19 @@ const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
                 </div>
             );
         }
+        // --- RENDER CHAT HISTORY ---
         return (
             <div className="flex-grow mt-6 space-y-2">
                 {chats.map(chat => (
-                    <div key={chat.id} className="p-3 rounded-lg bg-white/5 border border-white/10 animate-fade-in">
-                        <p className="text-white font-medium text-sm">{chat.title}</p>
-                        <p className="text-gray-400 text-xs">{chat.subtitle}</p>
-                    </div>
+                    <button
+                        key={chat.id}
+                        onClick={() => onSelectChat(chat.id)}
+                        className={`w-full text-left p-3 rounded-lg border transition-colors animate-fade-in ${activeChatId === chat.id ? 'bg-white/20 border-white/30' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                            }`}
+                    >
+                        <p className="text-white font-medium text-sm truncate">{chat.title}</p>
+                        <p className="text-gray-400 text-xs truncate">{chat.messages.length > 0 ? chat.messages[0].text : 'Start a new conversation...'}</p>
+                    </button>
                 ))}
             </div>
         );
@@ -141,7 +136,7 @@ const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
                 <span className="font-bold text-xl text-white">Mr Dork</span>
             </div>
             <button
-                onClick={handleNewChat}
+                onClick={onNewChat}
                 className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-all duration-200 shadow-lg"
             >
                 <PlusIcon />

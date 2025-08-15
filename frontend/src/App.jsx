@@ -42,27 +42,50 @@ const modelConfigurations = {
 
 
 function App() {
-  // State for settings is now lifted to the App component to be shared
   const [settings, setSettings] = useState({
-    'OpenAI': { enabled: true, isBaseline: true, apiKey: '' }, // Enabled & Baseline by default
+    'OpenAI': { enabled: true, isBaseline: true, apiKey: '' },
     'DeepSeek': { enabled: false, isBaseline: false, apiKey: '' },
     'Claude': { enabled: false, isBaseline: false, apiKey: '' },
     'Google Gemini': { enabled: false, isBaseline: false, apiKey: '' }
   });
 
-  // Calculate the number of enabled models
+  // --- NEW: State is lifted up to manage all chats and the active one ---
+  const [chats, setChats] = useState([
+    { id: 1, title: 'Initial Chat', messages: [] }
+  ]);
+  const [activeChatId, setActiveChatId] = useState(1);
+
+  const activeChat = useMemo(() => chats.find(chat => chat.id === activeChatId), [chats, activeChatId]);
+
+  const handleNewChat = () => {
+    const newChat = {
+      id: Date.now(),
+      title: `New Chat ${chats.length + 1}`,
+      messages: []
+    };
+    setChats(prevChats => [...prevChats, newChat]);
+    setActiveChatId(newChat.id);
+  };
+
+  const handleSetMessages = (newMessages) => {
+    setChats(prevChats =>
+      prevChats.map(chat =>
+        chat.id === activeChatId ? { ...chat, messages: newMessages } : chat
+      )
+    );
+  };
+  // --- END OF NEW STATE LOGIC ---
+
   const enabledModelsCount = useMemo(() => {
     return Object.values(settings).filter(modelSettings => modelSettings.enabled).length;
   }, [settings]);
 
-  // Get the names of the enabled models
   const enabledModelNames = useMemo(() => {
     return Object.entries(settings)
       .filter(([, modelSettings]) => modelSettings.enabled)
       .map(([modelName]) => modelName);
   }, [settings]);
 
-  // Find the name of the baseline model
   const baselineModelName = useMemo(() => {
     return Object.entries(settings).find(([, modelSettings]) => modelSettings.isBaseline)?.[0] || 'OpenAI';
   }, [settings]);
@@ -74,11 +97,18 @@ function App() {
         settings={settings}
         setSettings={setSettings}
         modelConfigurations={modelConfigurations}
+        chats={chats}
+        activeChatId={activeChatId}
+        onNewChat={handleNewChat}
+        onSelectChat={setActiveChatId}
       />
       <ChatWindow
+        key={activeChatId} // Add key to force re-mount on chat change
         enabledModelsCount={enabledModelsCount}
         enabledModelNames={enabledModelNames}
         baselineModelName={baselineModelName}
+        messages={activeChat.messages}
+        setMessages={handleSetMessages}
       />
     </div>
   );

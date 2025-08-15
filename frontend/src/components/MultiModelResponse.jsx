@@ -16,7 +16,7 @@ const MultiModelResponse = ({ message }) => {
             <div className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center border border-white/10 shadow-lg bg-blue-600">
                 <BotIcon />
             </div>
-            <div className="w-full max-w-3xl space-y-4"> {/* Changed from space-y-6 to space-y-4 */}
+            <div className="w-full max-w-3xl space-y-4">
                 {/* Summary Message */}
                 <div className="p-4 rounded-lg shadow-md bg-gray-800/60 backdrop-blur-sm text-gray-200 border border-white/10">
                     <p className="leading-relaxed">{message.summary}</p>

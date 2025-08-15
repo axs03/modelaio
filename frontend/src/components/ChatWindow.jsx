@@ -36,8 +36,7 @@ const UserMessage = ({ message }) => (
 );
 
 
-const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName }) => {
-    const [messages, setMessages] = useState([]);
+const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, messages, setMessages }) => {
     const [input, setInput] = useState('');
     const [isAiTyping, setIsAiTyping] = useState(false);
     const chatEndRef = useRef(null);
@@ -55,7 +54,7 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName }
         const timestamp = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
         const userMessage = { id: Date.now(), text: input, sender: 'user', timestamp };
 
-        setMessages((prevMessages) => [...prevMessages, userMessage]);
+        setMessages([...messages, userMessage]);
         setInput('');
         setIsAiTyping(true);
 
@@ -67,7 +66,7 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName }
                 timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true }),
                 summary: `${enabledModelsCount} AI model${enabledModelsCount > 1 ? 's have' : ' has'} responded to your question. You can view their responses and similarity scores below.`,
                 overallSimilarity: 71,
-                baselineModel: baselineModelName, // Pass the baseline model name
+                baselineModel: baselineModelName,
                 responses: enabledModelNames.map(name => ({
                     model: name,
                     response: `${name}'s response to: "${userMessage.text}". This is a placeholder answer with some detail.`,
@@ -76,7 +75,7 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName }
             };
 
             setIsAiTyping(false);
-            setMessages((prevMessages) => [...prevMessages, multiModelResponse]);
+            setMessages([...messages, userMessage, multiModelResponse]);
         }, 2500);
     };
 
