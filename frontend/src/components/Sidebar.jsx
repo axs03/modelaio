@@ -12,9 +12,20 @@ import ToggleSwitch from './ToggleSwitch';
 const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
     const [view, setView] = useState('chat');
     const [selectedModel, setSelectedModel] = useState('OpenAI');
+    const [chats, setChats] = useState([]);
 
     const handleNewChat = () => {
-        window.location.reload();
+        const newChat = {
+            id: Date.now(),
+            title: 'New Chat',
+            subtitle: 'Start a new conversation...'
+        };
+        setChats(prevChats => [...prevChats, newChat]);
+        setView('chat');
+    };
+
+    const handleSettingsToggle = () => {
+        setView(prevView => prevView === 'settings' ? 'chat' : 'settings');
     };
 
     const handleToggleChange = (modelName, toggleId) => {
@@ -22,21 +33,16 @@ const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
             const newSettings = JSON.parse(JSON.stringify(prevSettings)); // Deep copy
             const currentModelSettings = newSettings[modelName];
 
-            // New logic for baseline selection
             if (toggleId === 'isBaseline') {
-                if (!currentModelSettings.isBaseline) { // If turning baseline ON
-                    // Turn off baseline for all other models
+                if (!currentModelSettings.isBaseline) {
                     for (const key in newSettings) {
                         newSettings[key].isBaseline = false;
                     }
-                    // Turn on baseline and enable for the current model
                     currentModelSettings.isBaseline = true;
                     currentModelSettings.enabled = true;
                 }
             } else {
-                // Standard toggle logic
                 currentModelSettings[toggleId] = !currentModelSettings[toggleId];
-                // If a model is disabled, it cannot be the baseline
                 if (toggleId === 'enabled' && !currentModelSettings.enabled) {
                     currentModelSettings.isBaseline = false;
                 }
@@ -115,8 +121,13 @@ const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
             );
         }
         return (
-            <div className="flex-grow mt-6">
-                <p className="text-gray-500 text-center text-sm px-4">Your chat history will appear here.</p>
+            <div className="flex-grow mt-6 space-y-2">
+                {chats.map(chat => (
+                    <div key={chat.id} className="p-3 rounded-lg bg-white/5 border border-white/10 animate-fade-in">
+                        <p className="text-white font-medium text-sm">{chat.title}</p>
+                        <p className="text-gray-400 text-xs">{chat.subtitle}</p>
+                    </div>
+                ))}
             </div>
         );
     };
@@ -140,17 +151,8 @@ const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
             {renderContent()}
 
             <div className="mt-auto flex-shrink-0 border-t border-white/10 pt-4">
-                {view === 'settings' && (
-                    <button
-                        onClick={() => setView('chat')}
-                        className="flex items-center w-full space-x-3 p-3 mb-2 rounded-lg hover:bg-white/10 transition-colors text-gray-300"
-                    >
-                        <SettingsIcon />
-                        <span>Back to Chat</span>
-                    </button>
-                )}
                 <button
-                    onClick={() => setView('settings')}
+                    onClick={handleSettingsToggle}
                     className={`flex items-center w-full space-x-3 p-3 rounded-lg transition-colors text-gray-300 ${view === 'settings' ? 'bg-white/10' : 'hover:bg-white/10'
                         }`}
                 >
