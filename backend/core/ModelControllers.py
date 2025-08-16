@@ -1,6 +1,4 @@
 import dspy
-import asyncio
-from typing import List
 from .types import SendSingleResponseObject, GetSingleResponseObject
 
 RED = "\033[91m"
