@@ -88,7 +88,7 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
             <header className="p-6 border-b border-white/10 flex items-center space-x-4">
                 <h1 className="text-xl font-semibold text-white">Chat</h1>
                 {enabledModelsCount > 0 && (
-                    <span className="text-sm bg-blue-600/50 text-blue-200 px-3 py-1 rounded-full">
+                    <span className="text-sm bg-blue-600/50 text-white-200 px-3 py-1 rounded">
                         {enabledModelsCount} model{enabledModelsCount > 1 && 's'} enabled
                     </span>
                 )}
@@ -114,12 +114,12 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder={enabledModelsCount > 0 ? "Type your message here..." : "Enable a model in settings to start chatting"}
-                        className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-3 pl-4 pr-14 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-3 pl-4 pr-14 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
                         disabled={isAiTyping || enabledModelsCount === 0}
                     />
                     <button
                         onClick={handleSend}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-blue-600 hover:bg-purple-700 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
                         disabled={isAiTyping || enabledModelsCount === 0}
                     >
                         <SendIcon />

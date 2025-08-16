@@ -94,7 +94,7 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChat
                                 value={currentSettings.apiKey}
                                 onChange={handleApiKeyChange}
                                 placeholder="sk-..."
-                                className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-2.5 pl-4 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-2.5 pl-4 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500"
                             />
                             <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
                                 <EyeIcon />
@@ -102,7 +102,7 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChat
                         </div>
                     </div>
 
-                    <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                    <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-800 transition-colors duration-200">
                         <SaveIcon />
                         <span>Save Keys</span>
                     </button>
@@ -130,14 +130,14 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChat
     return (
         <div className="w-80 bg-black/20 backdrop-blur-lg border-r border-white/10 p-6 flex flex-col flex-shrink-0">
             <div className="flex items-center space-x-3 mb-8">
-                <div className="p-2 bg-blue-600 rounded-lg shadow-lg">
+                <div className="p-2 bg-purple-600 rounded-lg shadow-lg">
                     <BotIcon />
                 </div>
-                <span className="font-bold text-xl text-white">Mr Dork</span>
+                <span className="font-bold text-xl text-white">model.aio</span>
             </div>
             <button
                 onClick={onNewChat}
-                className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-all duration-200 shadow-lg"
+                className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
             >
                 <PlusIcon />
                 <span>New Chat</span>
