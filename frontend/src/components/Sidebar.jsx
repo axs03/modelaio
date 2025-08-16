@@ -65,8 +65,8 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChat
                                 key={model}
                                 onClick={() => setSelectedModel(model)}
                                 className={`p-3 rounded-md text-sm font-semibold transition-all duration-200 border ${selectedModel === model
-                                        ? 'bg-white/20 border-white/30 text-white shadow-lg'
-                                        : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
+                                    ? 'bg-white/20 border-white/30 text-white shadow-lg'
+                                    : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
                                     }`}
                             >
                                 {model}
