@@ -1,41 +1,162 @@
 /*
 ================================================================================
 | FILE: src/components/Sidebar.jsx
-| DESCRIPTION: The left sidebar component with navigation and user info.
+| ACTION: Replace the entire content of this file with the code below.
 ================================================================================
 */
-import React from 'react';
-import { Plus, Settings, User, Bot } from 'lucide-react';
+import React, { useState } from 'react';
+import { PlusIcon, SettingsIcon, UserIcon, BotIcon, EyeIcon, SaveIcon } from './Icons';
+import ToggleSwitch from './ToggleSwitch';
 
-const Sidebar = ({ onSettingsClick }) => {
-    return (
-        <div className="w-64 bg-[#171717] p-4 flex flex-col flex-shrink-0">
-            {/* Logo */}
-            <div className="flex items-center space-x-2 mb-8">
-                <div className="p-2 bg-purple-600 rounded-lg">
-                    <Bot className="h-6 w-6 text-white" />
+// The Sidebar now receives its state and configuration as props
+const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChatId, onNewChat, onSelectChat }) => {
+    const [view, setView] = useState('chat');
+    const [selectedModel, setSelectedModel] = useState('OpenAI');
+
+    const handleSettingsToggle = () => {
+        setView(prevView => prevView === 'settings' ? 'chat' : 'settings');
+    };
+
+    const handleToggleChange = (modelName, toggleId) => {
+        setSettings(prevSettings => {
+            const newSettings = JSON.parse(JSON.stringify(prevSettings)); // Deep copy
+            const currentModelSettings = newSettings[modelName];
+
+            if (toggleId === 'isBaseline') {
+                if (!currentModelSettings.isBaseline) {
+                    for (const key in newSettings) {
+                        newSettings[key].isBaseline = false;
+                    }
+                    currentModelSettings.isBaseline = true;
+                    currentModelSettings.enabled = true;
+                }
+            } else {
+                currentModelSettings[toggleId] = !currentModelSettings[toggleId];
+                if (toggleId === 'enabled' && !currentModelSettings.enabled) {
+                    currentModelSettings.isBaseline = false;
+                }
+            }
+
+            return newSettings;
+        });
+    };
+
+    const handleApiKeyChange = (event) => {
+        const newApiKey = event.target.value;
+        setSettings(prevSettings => ({
+            ...prevSettings,
+            [selectedModel]: {
+                ...prevSettings[selectedModel],
+                apiKey: newApiKey
+            }
+        }));
+    };
+
+    const renderContent = () => {
+        if (view === 'settings') {
+            const currentConfig = modelConfigurations[selectedModel];
+            const currentSettings = settings[selectedModel];
+
+            return (
+                <div className="flex flex-col flex-grow mt-6 animate-fade-in">
+                    <div className="grid grid-cols-2 gap-2 mb-6">
+                        {Object.keys(modelConfigurations).map(model => (
+                            <button
+                                key={model}
+                                onClick={() => setSelectedModel(model)}
+                                className={`p-3 rounded-md text-sm font-semibold transition-all duration-200 border ${selectedModel === model
+                                        ? 'bg-white/20 border-white/30 text-white shadow-lg'
+                                        : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
+                                    }`}
+                            >
+                                {model}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="space-y-4 mb-6">
+                        {currentConfig.toggles.map(toggle => (
+                            <ToggleSwitch
+                                key={toggle.id}
+                                label={toggle.label}
+                                isEnabled={currentSettings[toggle.id]}
+                                onToggle={() => handleToggleChange(selectedModel, toggle.id)}
+                            />
+                        ))}
+                    </div>
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            {currentConfig.apiKeyLabel}
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="password"
+                                value={currentSettings.apiKey}
+                                onChange={handleApiKeyChange}
+                                placeholder="sk-..."
+                                className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-2.5 pl-4 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            />
+                            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                                <EyeIcon />
+                            </button>
+                        </div>
+                    </div>
+
+                    <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-800 transition-colors duration-200">
+                        <SaveIcon />
+                        <span>Save Keys</span>
+                    </button>
                 </div>
-                <span className="font-bold text-lg">Mr Dork</span>
+            );
+        }
+        // --- RENDER CHAT HISTORY ---
+        return (
+            <div className="flex-grow mt-6 space-y-2">
+                {chats.map(chat => (
+                    <button
+                        key={chat.id}
+                        onClick={() => onSelectChat(chat.id)}
+                        className={`w-full text-left p-3 rounded-lg border transition-colors animate-fade-in ${activeChatId === chat.id ? 'bg-white/20 border-white/30' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                            }`}
+                    >
+                        <p className="text-white font-medium text-sm truncate">{chat.title}</p>
+                        <p className="text-gray-400 text-xs truncate">{chat.messages.length > 0 ? chat.messages[0].text : 'Start a new conversation...'}</p>
+                    </button>
+                ))}
             </div>
+        );
+    };
 
-            {/* New Chat Button */}
-            <button className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-gradient-to-r from-[#00C4F4] to-[#00D886] hover:opacity-90 transition-opacity">
-                <Plus className="h-5 w-5" />
+    return (
+        <div className="w-80 bg-black/20 backdrop-blur-lg border-r border-white/10 p-6 flex flex-col flex-shrink-0">
+            <div className="flex items-center space-x-3 mb-8">
+                <div className="p-2 bg-purple-600 rounded-lg shadow-lg">
+                    <BotIcon />
+                </div>
+                <span className="font-bold text-xl text-white">model.aio</span>
+            </div>
+            <button
+                onClick={onNewChat}
+                className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
+            >
+                <PlusIcon />
                 <span>New Chat</span>
             </button>
 
-            {/* Spacer */}
-            <div className="flex-grow"></div>
+            {renderContent()}
 
-            {/* Bottom Section */}
-            <div className="space-y-2">
-                <button onClick={onSettingsClick} className="flex items-center w-full space-x-3 p-2 rounded-lg hover:bg-gray-700 transition-colors">
-                    <Settings className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-300">Settings</span>
+            <div className="mt-auto flex-shrink-0 border-t border-white/10 pt-4">
+                <button
+                    onClick={handleSettingsToggle}
+                    className={`flex items-center w-full space-x-3 p-3 rounded-lg transition-colors text-gray-300 ${view === 'settings' ? 'bg-white/10' : 'hover:bg-white/10'
+                        }`}
+                >
+                    <SettingsIcon />
+                    <span>Settings</span>
                 </button>
-                <div className="flex items-center w-full space-x-3 p-2 border-t border-gray-700 pt-4">
-                    <div className="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center">
-                        <User className="h-5 w-5 text-white" />
+                <div className="flex items-center w-full space-x-3 p-3 mt-2">
+                    <div className="h-10 w-10 rounded-full bg-gray-700/50 flex items-center justify-center border border-white/10">
+                        <UserIcon />
                     </div>
                     <div className="flex flex-col">
                         <span className="text-sm font-medium text-white">Demo User</span>
