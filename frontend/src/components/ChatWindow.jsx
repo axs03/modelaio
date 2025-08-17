@@ -36,7 +36,7 @@ const UserMessage = ({ message }) => (
 );
 
 
-const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, messages, setMessages }) => {
+const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, messages, setMessages, setSidebarView }) => {
     const [input, setInput] = useState('');
     const [isAiTyping, setIsAiTyping] = useState(false);
     const chatEndRef = useRef(null);
@@ -50,7 +50,7 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
     }, [messages, isAiTyping]);
 
     const handleSend = () => {
-        if (input.trim() === '' || enabledModelsCount === 0) return;
+        if (input.trim() === '' || enabledModelsCount < 2) return;
         const timestamp = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
         const userMessage = { id: Date.now(), text: input, sender: 'user', timestamp };
 
@@ -88,7 +88,7 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
             <header className="p-6 border-b border-white/10 flex items-center space-x-4">
                 <h1 className="text-xl font-semibold text-white">Chat</h1>
                 {enabledModelsCount > 0 && (
-                    <span className="text-sm bg-blue-600/50 text-white-200 px-3 py-1 rounded">
+                    <span className="text-sm bg-purple-600/50 text-purple-200 px-3 py-1 rounded-full">
                         {enabledModelsCount} model{enabledModelsCount > 1 && 's'} enabled
                     </span>
                 )}
@@ -107,23 +107,31 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
                 <div ref={chatEndRef} />
             </main>
             <footer className="p-6 bg-gray-800/50 border-t border-white/10">
-                <div className="relative">
+                <div className="flex items-center space-x-4">
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder={enabledModelsCount > 0 ? "Type your message here..." : "Enable a model in settings to start chatting"}
-                        className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-3 pl-4 pr-14 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                        className="flex-1 bg-gray-900/50 border border-white/10 rounded-lg py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         disabled={isAiTyping || enabledModelsCount === 0}
                     />
-                    <button
-                        onClick={handleSend}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-blue-600 hover:bg-purple-700 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-                        disabled={isAiTyping || enabledModelsCount === 0}
-                    >
-                        <SendIcon />
-                    </button>
+                    {/* --- NEW FEATURE: Tooltip for disabled button --- */}
+                    <div className="relative group">
+                        <button
+                            onClick={handleSend}
+                            className="p-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+                            disabled={isAiTyping || enabledModelsCount < 2}
+                        >
+                            <SendIcon />
+                        </button>
+                        {enabledModelsCount < 2 && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 text-sm text-white bg-gray-900 border border-white/10 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                Please enable more than one model. You can navigate to the <button onClick={() => setSidebarView('settings')} className="text-purple-400 underline hover:text-purple-300">settings</button> menu.
+                            </div>
+                        )}
+                    </div>
                 </div>
             </footer>
         </div>

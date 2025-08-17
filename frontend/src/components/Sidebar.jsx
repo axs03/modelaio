@@ -8,18 +8,19 @@ import React, { useState } from 'react';
 import { PlusIcon, SettingsIcon, UserIcon, BotIcon, EyeIcon, SaveIcon } from './Icons';
 import ToggleSwitch from './ToggleSwitch';
 
-// The Sidebar now receives its state and configuration as props
-const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChatId, onNewChat, onSelectChat }) => {
-    const [view, setView] = useState('chat');
+const EyeOffIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>;
+
+const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChatId, onNewChat, onSelectChat, sidebarView, setSidebarView }) => {
     const [selectedModel, setSelectedModel] = useState('OpenAI');
+    const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
 
     const handleSettingsToggle = () => {
-        setView(prevView => prevView === 'settings' ? 'chat' : 'settings');
+        setSidebarView(prevView => prevView === 'settings' ? 'chat' : 'settings');
     };
 
     const handleToggleChange = (modelName, toggleId) => {
         setSettings(prevSettings => {
-            const newSettings = JSON.parse(JSON.stringify(prevSettings)); // Deep copy
+            const newSettings = JSON.parse(JSON.stringify(prevSettings));
             const currentModelSettings = newSettings[modelName];
 
             if (toggleId === 'isBaseline') {
@@ -53,7 +54,7 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChat
     };
 
     const renderContent = () => {
-        if (view === 'settings') {
+        if (sidebarView === 'settings') {
             const currentConfig = modelConfigurations[selectedModel];
             const currentSettings = settings[selectedModel];
 
@@ -90,26 +91,28 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChat
                         </label>
                         <div className="relative">
                             <input
-                                type="password"
+                                type={isApiKeyVisible ? 'text' : 'password'}
                                 value={currentSettings.apiKey}
                                 onChange={handleApiKeyChange}
                                 placeholder="sk-..."
-                                className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-2.5 pl-4 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                className="w-full bg-gray-900/50 border border-white/10 rounded-lg py-2.5 pl-4 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
-                            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
-                                <EyeIcon />
+                            <button
+                                onClick={() => setIsApiKeyVisible(!isApiKeyVisible)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                            >
+                                {isApiKeyVisible ? <EyeIcon /> : <EyeOffIcon />}
                             </button>
                         </div>
                     </div>
 
-                    <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-800 transition-colors duration-200">
+                    <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
                         <SaveIcon />
                         <span>Save Keys</span>
                     </button>
                 </div>
             );
         }
-        // --- RENDER CHAT HISTORY ---
         return (
             <div className="flex-grow mt-6 space-y-2">
                 {chats.map(chat => (
@@ -133,22 +136,26 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChat
                 <div className="p-2 bg-purple-600 rounded-lg shadow-lg">
                     <BotIcon />
                 </div>
-                <span className="font-bold text-xl text-white">model.aio</span>
+                <span className="font-bold text-xl text-white">Mr Dork</span>
             </div>
-            <button
-                onClick={onNewChat}
-                className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
-            >
-                <PlusIcon />
-                <span>New Chat</span>
-            </button>
+
+            {/* --- BUG FIX: Conditionally render the New Chat button --- */}
+            {sidebarView === 'chat' && (
+                <button
+                    onClick={onNewChat}
+                    className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
+                >
+                    <PlusIcon />
+                    <span>New Chat</span>
+                </button>
+            )}
 
             {renderContent()}
 
             <div className="mt-auto flex-shrink-0 border-t border-white/10 pt-4">
                 <button
                     onClick={handleSettingsToggle}
-                    className={`flex items-center w-full space-x-3 p-3 rounded-lg transition-colors text-gray-300 ${view === 'settings' ? 'bg-white/10' : 'hover:bg-white/10'
+                    className={`flex items-center w-full space-x-3 p-3 rounded-lg transition-colors text-gray-300 ${sidebarView === 'settings' ? 'bg-white/10' : 'hover:bg-white/10'
                         }`}
                 >
                     <SettingsIcon />

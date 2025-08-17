@@ -49,7 +49,9 @@ function App() {
     'Google Gemini': { enabled: false, isBaseline: false, apiKey: '' }
   });
 
-  // --- NEW: State is lifted up to manage all chats and the active one ---
+  // --- NEW: State for the sidebar view is lifted up to App ---
+  const [sidebarView, setSidebarView] = useState('chat');
+
   const [chats, setChats] = useState([
     { id: 1, title: 'Initial Chat', messages: [] }
   ]);
@@ -65,6 +67,7 @@ function App() {
     };
     setChats(prevChats => [...prevChats, newChat]);
     setActiveChatId(newChat.id);
+    setSidebarView('chat'); // Ensure we are in chat view
   };
 
   const handleSetMessages = (newMessages) => {
@@ -74,7 +77,6 @@ function App() {
       )
     );
   };
-  // --- END OF NEW STATE LOGIC ---
 
   const enabledModelsCount = useMemo(() => {
     return Object.values(settings).filter(modelSettings => modelSettings.enabled).length;
@@ -101,14 +103,17 @@ function App() {
         activeChatId={activeChatId}
         onNewChat={handleNewChat}
         onSelectChat={setActiveChatId}
+        sidebarView={sidebarView}
+        setSidebarView={setSidebarView}
       />
       <ChatWindow
-        key={activeChatId} // Add key to force re-mount on chat change
+        key={activeChatId}
         enabledModelsCount={enabledModelsCount}
         enabledModelNames={enabledModelNames}
         baselineModelName={baselineModelName}
         messages={activeChat.messages}
         setMessages={handleSetMessages}
+        setSidebarView={setSidebarView} // Pass setSidebarView to ChatWindow
       />
     </div>
   );
