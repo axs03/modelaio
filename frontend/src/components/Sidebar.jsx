@@ -8,36 +8,19 @@ import React, { useState } from 'react';
 import { PlusIcon, SettingsIcon, UserIcon, BotIcon, EyeIcon, SaveIcon } from './Icons';
 import ToggleSwitch from './ToggleSwitch';
 
-// --- NEW: Added an EyeOffIcon for the toggle functionality ---
-const EyeOffIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>;
+const EyeOffIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>;
 
-
-// The Sidebar now receives its state and configuration as props
-const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
-    const [view, setView] = useState('chat');
+const Sidebar = ({ settings, setSettings, modelConfigurations, chats, activeChatId, onNewChat, onSelectChat, sidebarView, setSidebarView }) => {
     const [selectedModel, setSelectedModel] = useState('OpenAI');
-    const [chats, setChats] = useState([]);
-
-    // --- State to manage API key visibility ---
     const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
 
-    const handleNewChat = () => {
-        const newChat = {
-            id: Date.now(),
-            title: 'New Chat',
-            subtitle: 'Start a new conversation...'
-        };
-        setChats(prevChats => [...prevChats, newChat]);
-        setView('chat');
-    };
-
     const handleSettingsToggle = () => {
-        setView(prevView => prevView === 'settings' ? 'chat' : 'settings');
+        setSidebarView(prevView => prevView === 'settings' ? 'chat' : 'settings');
     };
 
     const handleToggleChange = (modelName, toggleId) => {
         setSettings(prevSettings => {
-            const newSettings = JSON.parse(JSON.stringify(prevSettings)); // Deep copy
+            const newSettings = JSON.parse(JSON.stringify(prevSettings));
             const currentModelSettings = newSettings[modelName];
 
             if (toggleId === 'isBaseline') {
@@ -71,7 +54,7 @@ const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
     };
 
     const renderContent = () => {
-        if (view === 'settings') {
+        if (sidebarView === 'settings') {
             const currentConfig = modelConfigurations[selectedModel];
             const currentSettings = settings[selectedModel];
 
@@ -133,10 +116,15 @@ const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
         return (
             <div className="flex-grow mt-6 space-y-2">
                 {chats.map(chat => (
-                    <div key={chat.id} className="p-3 rounded-lg bg-white/5 border border-white/10 animate-fade-in">
-                        <p className="text-white font-medium text-sm">{chat.title}</p>
-                        <p className="text-gray-400 text-xs">{chat.subtitle}</p>
-                    </div>
+                    <button
+                        key={chat.id}
+                        onClick={() => onSelectChat(chat.id)}
+                        className={`w-full text-left p-3 rounded-lg border transition-colors animate-fade-in ${activeChatId === chat.id ? 'bg-white/20 border-white/30' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                            }`}
+                    >
+                        <p className="text-white font-medium text-sm truncate">{chat.title}</p>
+                        <p className="text-gray-400 text-xs truncate">{chat.messages.length > 0 ? chat.messages[0].text : 'Start a new conversation...'}</p>
+                    </button>
                 ))}
             </div>
         );
@@ -150,20 +138,24 @@ const Sidebar = ({ settings, setSettings, modelConfigurations }) => {
                 </div>
                 <span className="font-bold text-xl text-white">Mr Dork</span>
             </div>
-            <button
-                onClick={handleNewChat}
-                className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
-            >
-                <PlusIcon />
-                <span>New Chat</span>
-            </button>
+
+            {/* --- BUG FIX: Conditionally render the New Chat button --- */}
+            {sidebarView === 'chat' && (
+                <button
+                    onClick={onNewChat}
+                    className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
+                >
+                    <PlusIcon />
+                    <span>New Chat</span>
+                </button>
+            )}
 
             {renderContent()}
 
             <div className="mt-auto flex-shrink-0 border-t border-white/10 pt-4">
                 <button
                     onClick={handleSettingsToggle}
-                    className={`flex items-center w-full space-x-3 p-3 rounded-lg transition-colors text-gray-300 ${view === 'settings' ? 'bg-white/10' : 'hover:bg-white/10'
+                    className={`flex items-center w-full space-x-3 p-3 rounded-lg transition-colors text-gray-300 ${sidebarView === 'settings' ? 'bg-white/10' : 'hover:bg-white/10'
                         }`}
                 >
                     <SettingsIcon />
