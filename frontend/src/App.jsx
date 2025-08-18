@@ -4,7 +4,7 @@
 | ACTION: Replace the entire content of this file with the code below.
 ================================================================================
 */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
 
@@ -49,34 +49,15 @@ function App() {
     'Google Gemini': { enabled: false, isBaseline: false, apiKey: '' }
   });
 
-  // --- NEW: State for the sidebar view is lifted up to App ---
-  const [sidebarView, setSidebarView] = useState('chat');
+  // --- State to manage the application's theme ---
+  const [theme, setTheme] = useState('dark'); // 'dark' or 'light'
 
-  const [chats, setChats] = useState([
-    { id: 1, title: 'Initial Chat', messages: [] }
-  ]);
-  const [activeChatId, setActiveChatId] = useState(1);
-
-  const activeChat = useMemo(() => chats.find(chat => chat.id === activeChatId), [chats, activeChatId]);
-
-  const handleNewChat = () => {
-    const newChat = {
-      id: Date.now(),
-      title: `New Chat ${chats.length + 1}`,
-      messages: []
-    };
-    setChats(prevChats => [...prevChats, newChat]);
-    setActiveChatId(newChat.id);
-    setSidebarView('chat'); // Ensure we are in chat view
-  };
-
-  const handleSetMessages = (newMessages) => {
-    setChats(prevChats =>
-      prevChats.map(chat =>
-        chat.id === activeChatId ? { ...chat, messages: newMessages } : chat
-      )
-    );
-  };
+  // --- This effect applies the theme class to the root HTML element ---
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark'); // Remove old theme
+    root.classList.add(theme); // Add new theme
+  }, [theme]);
 
   const enabledModelsCount = useMemo(() => {
     return Object.values(settings).filter(modelSettings => modelSettings.enabled).length;
@@ -94,26 +75,19 @@ function App() {
 
 
   return (
-    <div className="flex h-screen w-full text-white font-sans overflow-hidden">
+    // The main div now has styles for both light and dark modes
+    <div className="flex h-screen w-full font-sans overflow-hidden bg-white dark:bg-gray-900">
       <Sidebar
         settings={settings}
         setSettings={setSettings}
         modelConfigurations={modelConfigurations}
-        chats={chats}
-        activeChatId={activeChatId}
-        onNewChat={handleNewChat}
-        onSelectChat={setActiveChatId}
-        sidebarView={sidebarView}
-        setSidebarView={setSidebarView}
+        theme={theme}
+        setTheme={setTheme}
       />
       <ChatWindow
-        key={activeChatId}
         enabledModelsCount={enabledModelsCount}
         enabledModelNames={enabledModelNames}
         baselineModelName={baselineModelName}
-        messages={activeChat.messages}
-        setMessages={handleSetMessages}
-        setSidebarView={setSidebarView} // Pass setSidebarView to ChatWindow
       />
     </div>
   );
