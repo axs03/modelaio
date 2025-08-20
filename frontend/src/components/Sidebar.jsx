@@ -10,21 +10,10 @@ import ToggleSwitch from './ToggleSwitch';
 
 const EyeOffIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>;
 
-const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme }) => {
+const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme, chats, activeChatId, onNewChat, onSelectChat }) => {
     const [view, setView] = useState('chat');
     const [selectedModel, setSelectedModel] = useState('OpenAI');
-    const [chats, setChats] = useState([]);
     const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
-
-    const handleNewChat = () => {
-        const newChat = {
-            id: Date.now(),
-            title: 'New Chat',
-            subtitle: 'Start a new conversation...'
-        };
-        setChats(prevChats => [...prevChats, newChat]);
-        setView('chat');
-    };
 
     const handleSettingsToggle = () => {
         setView(prevView => prevView === 'settings' ? 'chat' : 'settings');
@@ -90,8 +79,8 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme }
                                 key={model}
                                 onClick={() => setSelectedModel(model)}
                                 className={`p-3 rounded-md text-sm font-semibold transition-all duration-200 border ${selectedModel === model
-                                        ? 'bg-black/20 dark:bg-white/20 border-black/20 dark:border-white/30 text-gray-800 dark:text-white shadow-lg'
-                                        : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
+                                    ? 'bg-black/20 dark:bg-white/20 border-black/20 dark:border-white/30 text-gray-800 dark:text-white shadow-lg'
+                                    : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
                                     }`}
                             >
                                 {model}
@@ -140,10 +129,15 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme }
         return (
             <div className="flex-grow mt-6 space-y-2">
                 {chats.map(chat => (
-                    <div key={chat.id} className="p-3 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 animate-fade-in">
-                        <p className="text-gray-800 dark:text-white font-medium text-sm">{chat.title}</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs">{chat.subtitle}</p>
-                    </div>
+                    <button
+                        key={chat.id}
+                        onClick={() => onSelectChat(chat.id)}
+                        className={`w-full text-left p-3 rounded-lg border transition-colors animate-fade-in ${activeChatId === chat.id ? 'bg-black/10 dark:bg-white/20 border-black/20 dark:border-white/30' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10'
+                            }`}
+                    >
+                        <p className="text-gray-800 dark:text-white font-medium text-sm truncate">{chat.title}</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs truncate">{chat.messages.length > 0 ? chat.messages[0].text : 'Start a new conversation...'}</p>
+                    </button>
                 ))}
             </div>
         );
@@ -155,10 +149,11 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme }
                 <div className="p-2 bg-purple-600 rounded-lg shadow-lg">
                     <BotIcon className="text-white" />
                 </div>
-                <span className="font-bold text-xl">Mr Dork</span>
+                {/* --- UPDATED: Application name changed here --- */}
+                <span className="font-bold text-xl">model.aio</span>
             </div>
             <button
-                onClick={handleNewChat}
+                onClick={onNewChat}
                 className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
             >
                 <PlusIcon />

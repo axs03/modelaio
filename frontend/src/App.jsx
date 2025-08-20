@@ -59,6 +59,31 @@ function App() {
     root.classList.add(theme); // Add new theme
   }, [theme]);
 
+  const [chats, setChats] = useState([
+    { id: 1, title: 'Initial Chat', messages: [] }
+  ]);
+  const [activeChatId, setActiveChatId] = useState(1);
+
+  const activeChat = useMemo(() => chats.find(chat => chat.id === activeChatId), [chats, activeChatId]);
+
+  const handleNewChat = () => {
+    const newChat = {
+      id: Date.now(),
+      title: `New Chat ${chats.length + 1}`,
+      messages: []
+    };
+    setChats(prevChats => [...prevChats, newChat]);
+    setActiveChatId(newChat.id);
+  };
+
+  const handleSetMessages = (newMessages) => {
+    setChats(prevChats =>
+      prevChats.map(chat =>
+        chat.id === activeChatId ? { ...chat, messages: newMessages } : chat
+      )
+    );
+  };
+
   const enabledModelsCount = useMemo(() => {
     return Object.values(settings).filter(modelSettings => modelSettings.enabled).length;
   }, [settings]);
@@ -75,19 +100,25 @@ function App() {
 
 
   return (
-    // The main div now has styles for both light and dark modes
-    <div className="flex h-screen w-full font-sans overflow-hidden bg-white dark:bg-gray-900">
+    <div className="flex h-screen w-full font-sans overflow-hidden bg-gray-100 dark:bg-gray-900">
       <Sidebar
         settings={settings}
         setSettings={setSettings}
         modelConfigurations={modelConfigurations}
         theme={theme}
         setTheme={setTheme}
+        chats={chats}
+        activeChatId={activeChatId}
+        onNewChat={handleNewChat}
+        onSelectChat={setActiveChatId}
       />
       <ChatWindow
+        key={activeChatId}
         enabledModelsCount={enabledModelsCount}
         enabledModelNames={enabledModelNames}
         baselineModelName={baselineModelName}
+        messages={activeChat.messages}
+        setMessages={handleSetMessages}
       />
     </div>
   );
