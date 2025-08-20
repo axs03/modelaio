@@ -79,8 +79,8 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme, 
                                 key={model}
                                 onClick={() => setSelectedModel(model)}
                                 className={`p-3 rounded-md text-sm font-semibold transition-all duration-200 border ${selectedModel === model
-                                        ? 'bg-black/20 dark:bg-white/20 border-black/20 dark:border-white/30 text-gray-800 dark:text-white shadow-lg'
-                                        : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
+                                    ? 'bg-black/20 dark:bg-white/20 border-black/20 dark:border-white/30 text-gray-800 dark:text-white shadow-lg'
+                                    : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
                                     }`}
                             >
                                 {model}
