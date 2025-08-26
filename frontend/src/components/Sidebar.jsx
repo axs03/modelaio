@@ -151,13 +151,15 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme, 
                 {/* --- UPDATED: Application name changed here --- */}
                 <span className="font-bold text-xl">model.aio</span>
             </div>
-            <button
-                onClick={onNewChat}
-                className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
-            >
-                <PlusIcon />
-                <span>New Chat</span>
-            </button>
+            {view !== 'settings' && (
+                <button
+                    onClick={onNewChat}
+                    className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
+                >
+                    <PlusIcon />
+                    <span>New Chat</span>
+                </button>
+            )}
 
             {renderContent()}
 
