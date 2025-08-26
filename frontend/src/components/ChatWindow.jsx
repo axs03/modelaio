@@ -83,7 +83,7 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
     // --- UPDATED: Logic to show tooltip on Enter press ---
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
-            if (isAiTyping || enabledModelsCount < 2) {
+            if (isAiTyping || enabledModelsCount < 2 || !baselineModelName) {
                 setShowTooltip(true);
                 setTimeout(() => setShowTooltip(false), 5000); // 5 seconds
             } else {
@@ -99,6 +99,11 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
                 {enabledModelsCount > 0 && (
                     <span className="text-sm bg-purple-600/50 text-purple-200 px-3 py-1 rounded-full">
                         {enabledModelsCount} model{enabledModelsCount > 1 && 's'} enabled
+                    </span>
+                )}
+                {baselineModelName && (
+                    <span className="text-sm bg-purple-600/50 text-purple-200 px-3 py-1 rounded-full">
+                        Baseline Model: {baselineModelName}
                     </span>
                 )}
             </header>
@@ -130,14 +135,14 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
                         <button
                             onClick={handleSend}
                             className="p-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-                            disabled={isAiTyping || enabledModelsCount < 2}
+                            disabled={isAiTyping || enabledModelsCount < 2 || !baselineModelName}
                         >
                             <SendIcon />
                         </button>
                         <div className={`absolute bottom-full right-0 mb-2 mr-2 w-64 px-3 py-1.5 text-sm text-white bg-gray-900 border border-white/10 rounded-md transition-opacity duration-1200 ${showTooltip ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
                             }`}
                         >
-                            Please enable more than one model. You can navigate to the <button onClick={() => setSidebarView('settings')} className="text-purple-400 underline hover:text-purple-300">settings</button> menu.
+                            Make sure you have a baseline model selected along with two or more models. You can navigate to the <button onClick={() => setSidebarView('settings')} className="text-purple-400 underline hover:text-purple-300">settings</button> menu.
                         </div>
                     </div>
                 </div>
