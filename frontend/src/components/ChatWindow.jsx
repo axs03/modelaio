@@ -85,7 +85,7 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
         if (e.key === 'Enter') {
             if (isAiTyping || enabledModelsCount < 2) {
                 setShowTooltip(true);
-                setTimeout(() => setShowTooltip(false), 2500); // Hide tooltip after 2.5 seconds
+                setTimeout(() => setShowTooltip(false), 5000); // 5 seconds
             } else {
                 handleSend();
             }
@@ -134,11 +134,10 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
                         >
                             <SendIcon />
                         </button>
-                        {/* --- UPDATED: Tooltip with new logic and fixed width --- */}
-                        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs px-3 py-1.5 text-sm text-white bg-gray-900 border border-white/10 rounded-md transition-opacity duration-300 pointer-events-none ${showTooltip ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        <div className={`absolute bottom-full right-0 mb-2 mr-2 w-64 px-3 py-1.5 text-sm text-white bg-gray-900 border border-white/10 rounded-md transition-opacity duration-1200 ${showTooltip ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
                             }`}
                         >
-                            Please enable more than one model. You can navigate to the <button onClick={() => setSidebarView('settings')} className="text-purple-400 underline hover:text-purple-300 pointer-events-auto">settings</button> menu.
+                            Please enable more than one model. You can navigate to the <button onClick={() => setSidebarView('settings')} className="text-purple-400 underline hover:text-purple-300">settings</button> menu.
                         </div>
                     </div>
                 </div>

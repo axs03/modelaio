@@ -51,6 +51,7 @@ function App() {
 
   // --- State to manage the application's theme ---
   const [theme, setTheme] = useState('dark'); // 'dark' or 'light'
+  const [sidebarView, setSidebarView] = useState('chat'); // state for opening settings
 
   // --- This effect applies the theme class to the root HTML element ---
   useEffect(() => {
@@ -111,6 +112,8 @@ function App() {
         activeChatId={activeChatId}
         onNewChat={handleNewChat}
         onSelectChat={setActiveChatId}
+        view={sidebarView}
+        setView={setSidebarView}
       />
       <ChatWindow
         key={activeChatId}
@@ -119,6 +122,7 @@ function App() {
         baselineModelName={baselineModelName}
         messages={activeChat.messages}
         setMessages={handleSetMessages}
+        setSidebarView={setSidebarView}
       />
     </div>
   );
