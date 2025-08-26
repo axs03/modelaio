@@ -79,8 +79,8 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme, 
                                 key={model}
                                 onClick={() => setSelectedModel(model)}
                                 className={`p-3 rounded-md text-sm font-semibold transition-all duration-200 border ${selectedModel === model
-                                    ? 'bg-black/20 dark:bg-white/20 border-black/20 dark:border-white/30 text-gray-800 dark:text-white shadow-lg'
-                                    : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
+                                        ? 'bg-black/20 dark:bg-white/20 border-black/20 dark:border-white/30 text-gray-800 dark:text-white shadow-lg'
+                                        : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
                                     }`}
                             >
                                 {model}
@@ -149,16 +149,19 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme, 
                 <div className="p-2 bg-purple-600 rounded-lg shadow-lg">
                     <BotIcon className="text-white" />
                 </div>
-                {/* --- UPDATED: Application name changed here --- */}
                 <span className="font-bold text-xl">model.aio</span>
             </div>
-            <button
-                onClick={onNewChat}
-                className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
-            >
-                <PlusIcon />
-                <span>New Chat</span>
-            </button>
+
+            {/* --- BUG FIX: Conditionally render the New Chat button --- */}
+            {view === 'chat' && (
+                <button
+                    onClick={onNewChat}
+                    className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
+                >
+                    <PlusIcon />
+                    <span>New Chat</span>
+                </button>
+            )}
 
             {renderContent()}
 
