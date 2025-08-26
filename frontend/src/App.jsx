@@ -13,29 +13,29 @@ const modelConfigurations = {
   'OpenAI': {
     apiKeyLabel: 'OpenAI API Key',
     toggles: [
-      { id: 'enabled', label: 'Enable OpenAI GPT-4' },
-      { id: 'isBaseline', label: 'Select as Baseline Model' }
+      { id: 'enabled', label: 'Enable OpenAI GPT' },
+      { id: 'isBaseline', label: 'Set Baseline Model' }
     ]
   },
   'DeepSeek': {
     apiKeyLabel: 'DeepSeek API Key',
     toggles: [
-      { id: 'enabled', label: 'Enable DeepSeek Coder' },
-      { id: 'isBaseline', label: 'Select as Baseline Model' }
+      { id: 'enabled', label: 'Enable DeepSeek' },
+      { id: 'isBaseline', label: 'Set Baseline Model' }
     ]
   },
   'Claude': {
     apiKeyLabel: 'Anthropic API Key',
     toggles: [
       { id: 'enabled', label: 'Enable Claude 3.5 Sonnet' },
-      { id: 'isBaseline', label: 'Select as Baseline Model' }
+      { id: 'isBaseline', label: 'Set Baseline Model' }
     ]
   },
   'Google Gemini': {
-    apiKeyLabel: 'Google Gemini API Key',
+    apiKeyLabel: 'Google API Key',
     toggles: [
       { id: 'enabled', label: 'Enable Gemini 1.5 Pro' },
-      { id: 'isBaseline', label: 'Select as Baseline Model' }
+      { id: 'isBaseline', label: 'Set Baseline Model' }
     ]
   }
 };
@@ -96,7 +96,7 @@ function App() {
   }, [settings]);
 
   const baselineModelName = useMemo(() => {
-    return Object.entries(settings).find(([, modelSettings]) => modelSettings.isBaseline)?.[0] || 'OpenAI';
+    return Object.entries(settings).find(([, modelSettings]) => modelSettings.isBaseline)?.[0];
   }, [settings]);
 
 

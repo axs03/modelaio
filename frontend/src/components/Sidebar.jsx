@@ -60,16 +60,6 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme, 
 
             return (
                 <div className="flex flex-col flex-grow mt-6 animate-fade-in">
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Theme</h3>
-                        <div className="p-4 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
-                            <ToggleSwitch
-                                label={theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
-                                isEnabled={theme === 'dark'}
-                                onToggle={() => setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark')}
-                            />
-                        </div>
-                    </div>
 
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Models</h3>
                     <div className="grid grid-cols-2 gap-2 mb-6">
@@ -116,12 +106,23 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme, 
                                 {isApiKeyVisible ? <EyeIcon /> : <EyeOffIcon />}
                             </button>
                         </div>
+                        <button className="w-full flex items-center justify-center space-x-2 p-3 mt-4 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
+                            <SaveIcon />
+                            <span>Save Keys</span>
+                        </button>
                     </div>
 
-                    <button className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
-                        <SaveIcon />
-                        <span>Save Keys</span>
-                    </button>
+
+                    <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Theme</h3>
+                        <div className="p-4 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
+                            <ToggleSwitch
+                                label={theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                                isEnabled={theme === 'dark'}
+                                onToggle={() => setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark')}
+                            />
+                        </div>
+                    </div>
                 </div>
             );
         }
@@ -151,13 +152,15 @@ const Sidebar = ({ settings, setSettings, modelConfigurations, theme, setTheme, 
                 {/* --- UPDATED: Application name changed here --- */}
                 <span className="font-bold text-xl">model.aio</span>
             </div>
-            <button
-                onClick={onNewChat}
-                className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
-            >
-                <PlusIcon />
-                <span>New Chat</span>
-            </button>
+            {view !== 'settings' && (
+                <button
+                    onClick={onNewChat}
+                    className="flex items-center justify-center space-x-2 w-full p-3 rounded-lg text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-all duration-200 shadow-lg"
+                >
+                    <PlusIcon />
+                    <span>New Chat</span>
+                </button>
+            )}
 
             {renderContent()}
 
