@@ -43,10 +43,10 @@ const modelConfigurations = {
 
 function App() {
   const [settings, setSettings] = useState({
-    'OpenAI': { enabled: true, isBaseline: true, apiKey: '' },
-    'DeepSeek': { enabled: false, isBaseline: false, apiKey: '' },
-    'Claude': { enabled: false, isBaseline: false, apiKey: '' },
-    'Google Gemini': { enabled: false, isBaseline: false, apiKey: '' }
+    'OpenAI': { enabled: true, isBaseline: true, apiKey: '', backendModelName: 'openai/gpt-4o' },
+    'DeepSeek': { enabled: false, isBaseline: false, apiKey: '', backendModelName: 'deepseek/deepseek-chat' },
+    'Claude': { enabled: false, isBaseline: false, apiKey: '', backendModelName: 'anthropic/claude-3-sonnet-20240229' },
+    'Google Gemini': { enabled: false, isBaseline: false, apiKey: '', backendModelName: 'gemini/gemini-1.5-pro' }
   });
 
   // --- State to manage the application's theme ---
@@ -123,6 +123,7 @@ function App() {
         messages={activeChat.messages}
         setMessages={handleSetMessages}
         setSidebarView={setSidebarView}
+        settings={settings}
       />
     </div>
   );

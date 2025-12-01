@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from core import (
     SimilarityModel, LLMController,
     SendSingleResponsePayload, GetSingleResponseObject, SendSimilarityScorePayload, 
@@ -10,6 +11,13 @@ app = FastAPI()
 sim = SimilarityModel()
 llm = LLMController()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # this is the vite dev server URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get(f"/")
 def read_root():
@@ -68,15 +76,19 @@ async def get_similarity_score(payload: SendSimilarityScorePayload) -> GetSimila
 
 
 @app.post("/get_response")
-async def get_response(payload: SendSingleResponsePayload) -> GetSingleResponseObject:
+def get_response(payload: SendSingleResponsePayload) -> GetSingleResponseObject:
     """Endpoint to get responses from a model based on the user prompt."""
     try:
-        response = await llm.get_single_response_async(
-            selected_model=payload.model_data, # passing the model object
+        response = llm.get_response(
+            model_name=payload.model_data.model_name,
+            secret=payload.model_data.secret,
             prompt=payload.prompt
         )
 
-        return response
+        return GetSingleResponseObject(
+            model_name=payload.model_data.model_name,
+            response=response
+        )
 
     except Exception as e:
         raise HTTPException(

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import MultiModelResponse from './MultiModelResponse';
 import { SendIcon, UserIcon, BotIcon } from './Icons';
+import { getModelResponse, getSimilarityScores } from '../services/api';
 
 const TypingIndicator = () => (
     <div className="flex items-start gap-4 animate-fade-in">
@@ -29,7 +30,19 @@ const UserMessage = ({ message }) => (
     </div>
 );
 
-const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, messages, setMessages, setSidebarView }) => {
+const ErrorMessage = ({ message }) => (
+    <div className="flex items-start gap-4 animate-fade-in">
+        <div className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center border border-gray-300 dark:border-white/10 shadow-lg bg-red-600">
+            <BotIcon />
+        </div>
+        <div className="max-w-xl p-4 rounded-lg shadow-md bg-red-100 dark:bg-red-900/30 backdrop-blur-sm text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700">
+            <p className="leading-relaxed">{message.text}</p>
+            <p className="text-xs mt-2 text-right opacity-70">{message.timestamp}</p>
+        </div>
+    </div>
+);
+
+const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, messages, setMessages, setSidebarView, settings }) => {
     const [input, setInput] = useState('');
     const [isAiTyping, setIsAiTyping] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
@@ -43,7 +56,7 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
         scrollToBottom();
     }, [messages, isAiTyping]);
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (input.trim() === '' || enabledModelsCount < 2) return;
         const timestamp = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
         const userMessage = { id: Date.now(), text: input, sender: 'user', timestamp };
@@ -52,25 +65,70 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
         setInput('');
         setIsAiTyping(true);
 
-        setTimeout(() => {
+        try {
+            // Get responses from all enabled models
+            const responsePromises = enabledModelNames.map(modelName => 
+                getModelResponse(
+                    settings[modelName].backendModelName, 
+                    settings[modelName].apiKey, 
+                    input
+                )
+            );
+
+            const responses = await Promise.all(responsePromises);
+
+            // Prepare data for similarity score calculation
+            const modelResponsesForSimilarity = responses.map(resp => ({
+                model_name: resp.model_name,
+                content: resp.response
+            }));
+
+            // Get similarity scores
+            const baselineIdx = enabledModelNames.indexOf(baselineModelName);
+            const similarityData = await getSimilarityScores(baselineIdx, modelResponsesForSimilarity);
+
+            // Calculate overall similarity (average of all similarity scores)
+            const overallSimilarity = Math.round(
+                (similarityData.content.reduce((acc, item) => acc + item.similarity_score, 0) / 
+                similarityData.content.length) * 100
+            );
+
+            // Create multi-model response object
             const multiModelResponse = {
                 id: Date.now() + 1,
                 sender: 'ai',
                 type: 'multi-model',
                 timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true }),
                 summary: `${enabledModelsCount} AI model${enabledModelsCount > 1 ? 's have' : ' has'} responded to your question. You can view their responses and similarity scores below.`,
-                overallSimilarity: 71,
+                overallSimilarity: overallSimilarity,
                 baselineModel: baselineModelName,
-                responses: enabledModelNames.map(name => ({
-                    model: name,
-                    response: `${name}'s response to: "${userMessage.text}". This is a placeholder answer with some detail.`,
-                    similarity: Math.floor(Math.random() * (95 - 60 + 1) + 60)
-                }))
+                responses: responses.map((resp) => {
+                    const similarityItem = similarityData.content.find(s => s.model_name === resp.model_name);
+                    return {
+                        model: resp.model_name,
+                        response: resp.response,
+                        similarity: Math.round((similarityItem?.similarity_score || 0) * 100)
+                    };
+                })
             };
 
             setIsAiTyping(false);
             setMessages([...messages, userMessage, multiModelResponse]);
-        }, 2500);
+        } catch (error) {
+            console.error('Error getting responses:', error);
+            setIsAiTyping(false);
+            
+            // Create error message for the user
+            const errorMessage = {
+                id: Date.now() + 1,
+                sender: 'ai',
+                type: 'error',
+                timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true }),
+                text: `Error: ${error.message}. Please check your API keys in settings and ensure the backend server is running.`
+            };
+            
+            setMessages([...messages, userMessage, errorMessage]);
+        }
     };
 
     const handleKeyPress = (e) => {
@@ -106,6 +164,9 @@ const ChatWindow = ({ enabledModelsCount, enabledModelNames, baselineModelName, 
                     }
                     if (msg.type === 'multi-model') {
                         return <MultiModelResponse key={msg.id} message={msg} />;
+                    }
+                    if (msg.type === 'error') {
+                        return <ErrorMessage key={msg.id} message={msg} />;
                     }
                     return null;
                 })}
