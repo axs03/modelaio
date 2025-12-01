@@ -77,11 +77,18 @@ function App() {
     setActiveChatId(newChat.id);
   };
 
-  const handleSetMessages = (newMessages) => {
+  const handleSetMessages = (newMessagesOrUpdater) => {
     setChats(prevChats =>
-      prevChats.map(chat =>
-        chat.id === activeChatId ? { ...chat, messages: newMessages } : chat
-      )
+      prevChats.map(chat => {
+        if (chat.id === activeChatId) {
+          // Check if newMessagesOrUpdater is a function (updater) or a value
+          const newMessages = typeof newMessagesOrUpdater === 'function'
+            ? newMessagesOrUpdater(chat.messages)
+            : newMessagesOrUpdater;
+          return { ...chat, messages: newMessages };
+        }
+        return chat;
+      })
     );
   };
 
@@ -115,16 +122,18 @@ function App() {
         view={sidebarView}
         setView={setSidebarView}
       />
-      <ChatWindow
-        key={activeChatId}
-        enabledModelsCount={enabledModelsCount}
-        enabledModelNames={enabledModelNames}
-        baselineModelName={baselineModelName}
-        messages={activeChat.messages}
-        setMessages={handleSetMessages}
-        setSidebarView={setSidebarView}
-        settings={settings}
-      />
+      {activeChat && (
+        <ChatWindow
+          key={activeChatId}
+          enabledModelsCount={enabledModelsCount}
+          enabledModelNames={enabledModelNames}
+          baselineModelName={baselineModelName}
+          messages={activeChat.messages}
+          setMessages={handleSetMessages}
+          setSidebarView={setSidebarView}
+          settings={settings}
+        />
+      )}
     </div>
   );
 }
