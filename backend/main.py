@@ -1,30 +1,45 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from core import (
-    SimilarityModel, LLMController,
-    SendSingleResponsePayload, GetSingleResponseObject, SendSimilarityScorePayload, 
-    GetSimilarityScorePayload, GetSimilarityScoreObject
+    SimilarityModel, LLMController, get_responses_capable_models,
+    SendSingleResponsePayload, GetSingleResponseObject, SendSimilarityScorePayload,
+    GetSimilarityScorePayload, GetSimilarityScoreObject, GetAvailableModelsResponse
 )
 import asyncio
 
-app = FastAPI()
+_available_models: list[str] = []
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global _available_models
+    _available_models = get_responses_capable_models()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 sim = SimilarityModel()
 llm = LLMController()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # this is the vite dev server URL
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Next.js / Vite dev servers
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get(f"/")
+@app.get("/")
 def read_root():
     return {
         "message": "Welcome to the model.aio backend!",
         "status": sim.STATUS
     }
+
+
+@app.get("/models")
+def get_models() -> GetAvailableModelsResponse:
+    """Return all LiteLLM models that support the /responses endpoint."""
+    return GetAvailableModelsResponse(models=_available_models)
 
 
 @app.post("/get_similarity_score")

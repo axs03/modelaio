@@ -28,3 +28,6 @@ class GetSimilarityScoreObject(BaseModel):
 class GetSimilarityScorePayload(BaseModel):
     base_model_name: str
     content: list[GetSimilarityScoreObject]
+
+class GetAvailableModelsResponse(BaseModel):
+    models: list[str]

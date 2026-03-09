@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   PlusIcon, SettingsIcon, BotIcon, EyeIcon, EyeOffIcon,
   SaveIcon, ChevronLeftIcon, ChevronRightIcon,
 } from './Icons'
 import ToggleSwitch from './ToggleSwitch'
+import { getAvailableModels } from '../src/services/api'
 
 const Sidebar = ({
   settings, setSettings, modelConfigurations,
@@ -16,6 +17,20 @@ const Sidebar = ({
   const [selectedModel, setSelectedModel] = useState('OpenAI')
   const [isApiKeyVisible, setIsApiKeyVisible] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isModelsExpanded, setIsModelsExpanded] = useState(false)
+  const [availableModels, setAvailableModels] = useState([])
+  const [modelsLoading, setModelsLoading] = useState(false)
+  const [modelsError, setModelsError] = useState(null)
+
+  useEffect(() => {
+    if (!isModelsExpanded) return
+    setModelsLoading(true)
+    setModelsError(null)
+    getAvailableModels()
+      .then(data => setAvailableModels(data.models))
+      .catch(err => setModelsError(err.message))
+      .finally(() => setModelsLoading(false))
+  }, [isModelsExpanded])
 
   const handleToggleChange = (modelName, toggleId) => {
     setSettings(prev => {
@@ -201,6 +216,43 @@ const Sidebar = ({
                   onToggle={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
                 />
               </div>
+            </div>
+
+            {/* Available Models */}
+            <div>
+              <button
+                onClick={() => setIsModelsExpanded(v => !v)}
+                className="w-full flex items-center justify-between text-[10px] font-semibold text-neutral-400 uppercase tracking-widest mb-2 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+              >
+                <span>Available Models</span>
+                <span className="text-neutral-400">{isModelsExpanded ? '▲' : '▼'}</span>
+              </button>
+              {isModelsExpanded && (
+                <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+                  {modelsLoading && (
+                    <p className="text-xs text-neutral-400 text-center py-4">Loading models…</p>
+                  )}
+                  {modelsError && (
+                    <p className="text-xs text-red-400 text-center py-4 px-3">{modelsError}</p>
+                  )}
+                  {!modelsLoading && !modelsError && (
+                    <div className="max-h-56 overflow-y-auto">
+                      {availableModels.length === 0 ? (
+                        <p className="text-xs text-neutral-400 text-center py-4">No models found.</p>
+                      ) : (
+                        availableModels.map(model => (
+                          <div
+                            key={model}
+                            className="px-3 py-1.5 text-xs text-neutral-700 dark:text-neutral-300 border-b border-neutral-100 dark:border-neutral-800 last:border-0 font-mono"
+                          >
+                            {model}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

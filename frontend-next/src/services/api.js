@@ -69,3 +69,18 @@ export const healthCheck = async () => {
   
   return await response.json();
 };
+
+/**
+ * Get all LiteLLM models that support the /responses endpoint
+ * @returns {Promise<{models: string[]}>}
+ */
+export const getAvailableModels = async () => {
+  const response = await fetch(`${API_BASE_URL}/models`);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+  }
+
+  return await response.json();
+};

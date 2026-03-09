@@ -1,9 +1,19 @@
+import litellm
 from litellm import completion
 
 RED = "\033[91m"
 YELLOW = "\033[93m"
 GREEN = "\033[92m"
 RESET = "\033[0m"
+
+
+def get_responses_capable_models() -> list[str]:
+    """Return all LiteLLM models that support the /responses endpoint (chat-mode models)."""
+    models = []
+    for model_name, model_info in litellm.model_cost.items():
+        if isinstance(model_info, dict) and model_info.get("mode") == "chat":
+            models.append(model_name)
+    return sorted(models)
 
 
 class LLMController():
