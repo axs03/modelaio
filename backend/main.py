@@ -1,12 +1,15 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from core import (
     SimilarityModel, LLMController, get_responses_capable_models,
     SendSingleResponsePayload, GetSingleResponseObject, SendSimilarityScorePayload,
     GetSimilarityScorePayload, GetSimilarityScoreObject, GetAvailableModelsResponse
 )
 import asyncio
+import json
+import litellm
 
 _available_models: list[str] = []
 
@@ -110,4 +113,35 @@ def get_response(payload: SendSingleResponsePayload) -> GetSingleResponseObject:
             status_code=500,
             detail=f"Error in generating responses: {str(e)}"
         )
+
+
+@app.post("/get_response_stream")
+async def get_response_stream(payload: SendSingleResponsePayload):
+    """Streaming SSE endpoint for model responses."""
+    # Capture values upfront so the async generator closure holds primitives
+    model_name = payload.model_data.model_name
+    api_key = payload.model_data.secret.strip()
+    prompt = payload.prompt
+
+    async def event_generator():
+        try:
+            response = await litellm.acompletion(
+                model=model_name,
+                messages=[{"role": "user", "content": prompt}],
+                api_key=api_key,
+                stream=True,
+            )
+            async for chunk in response:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield f"data: {json.dumps({'content': delta})}\n\n"
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
     

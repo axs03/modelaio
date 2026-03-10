@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    profiles:
+      - backend # docker compose --profile backend up
+      - full
+
+  frontend:
+    build:
+      context: ./frontend-next
+      args:
+        # API URL is baked in at build time for client-side Next.js calls.
+        # Change this if your backend is served at a different host/port.
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    profiles:
+      - frontend # docker compose --profile frontend up
+      - full

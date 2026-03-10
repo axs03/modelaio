@@ -8,55 +8,41 @@ RESET = "\033[0m"
 
 
 def get_responses_capable_models() -> list[str]:
-    """Return all LiteLLM models that support the /responses endpoint (chat-mode models)."""
+    """Return LiteLLM chat models that are unambiguously routable.
+
+    Only models with an explicit provider prefix (e.g. 'openrouter/openai/gpt-4o',
+    'deepseek/deepseek-chat') OR native OpenAI models (which litellm routes by
+    default) are included. Bare alias names like 'deepseek-chat' or
+    'claude-3-5-sonnet-20241022' are excluded because litellm cannot determine
+    the provider from the name alone and will raise BadRequestError.
+    """
     models = []
     for model_name, model_info in litellm.model_cost.items():
-        if isinstance(model_info, dict) and model_info.get("mode") == "chat":
+        if not isinstance(model_info, dict) or model_info.get("mode") != "chat":
+            continue
+        provider = model_info.get("litellm_provider", "")
+        # Include models that carry an explicit provider in their name, or
+        # OpenAI models which litellm routes without a prefix.
+        if "/" in model_name or provider in ("openai", "text-completion-openai"):
             models.append(model_name)
     return sorted(models)
 
 
 class LLMController():
     STATUS = str("OK")
-    def __init__(self):
-        self.models = {
-            "openai/gpt-4o" : None,
-            "anthropic/claude-3-sonnet-20240229" : None,
-            "xai/grok-2-latest" : None,
-            "ollama/llama2" : "http://localhost:11434", # TODO: impl dynamic port
-            "deepseek/deepseek-chat" : "https://api.deepseek.com",
-            "claude-3-7-sonnet-20250219" : "https://api.anthropic.com"
-        }
 
+    def get_response(self, model_name: str, secret: str, prompt: str) -> str:
+        """Get a response from any LiteLLM-supported chat model."""
+        if not model_name or not secret or not prompt:
+            raise ValueError("model_name, secret, and prompt are all required")
+        try:
+            response = completion(
+                model=model_name,
+                messages=[{"role": "user", "content": prompt}],
+                api_key=secret.strip(),
+            )
+        except Exception as e:
+            raise Exception(f"Error generating response from {model_name}: {e}")
 
-    def get_response(self, model_name: str, secret: str, prompt: str):
-        """Get a response from one single model."""
-        base_url = self.models.get(model_name, None)
-
-        conds = (model_name in self.models.keys(), secret is not None, prompt is not None)
-        if all(conds) and base_url is not None:
-            try:
-                response = completion(
-                    model=model_name,
-                    messages=[
-                        {"role": "user", "content": prompt}
-                    ],
-                    api_key=secret,
-                    base_url=base_url,
-                )
-            except Exception as e:
-                raise Exception(f"error in generating w/ base_url: {e}")
-        elif all(conds):
-            try:
-                response = completion(
-                    model=model_name,
-                    messages=[
-                        {"role": "user", "content": prompt}
-                    ],
-                    api_key=secret,
-                )
-            except Exception as e:
-                raise Exception(f"error in generating w/o base_url: {e}")
-
-        text = response['choices'][0]['message']['content'] # type: ignore
+        text = response['choices'][0]['message']['content']  # type: ignore
         return text
