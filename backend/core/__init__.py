@@ -4,16 +4,16 @@ Type safe classes are also present for importing.
 """
 
 from .SimilarityModel import SimilarityModel
-from .ModelControllers import LLMController
+from .ModelControllers import LLMController, get_responses_capable_models
 from .types import (
     SendSingleResponsePayload, GetSingleResponseObject, SendSingleResponseObject,
     SendSimilarityScoreObject, SendSimilarityScorePayload, GetSimilarityScorePayload,
-    GetSimilarityScoreObject
+    GetSimilarityScoreObject, GetAvailableModelsResponse
 )
 
 __all__ = [
-    "SimilarityModel", "LLMController", "SendSingleResponsePayload",
-    "GetSingleResponseObject", "SendSingleResponseObject",
+    "SimilarityModel", "LLMController", "get_responses_capable_models",
+    "SendSingleResponsePayload", "GetSingleResponseObject", "SendSingleResponseObject",
     "SendSimilarityScoreObject", "SendSimilarityScorePayload",
-    "GetSimilarityScorePayload", "GetSimilarityScoreObject"
+    "GetSimilarityScorePayload", "GetSimilarityScoreObject", "GetAvailableModelsResponse"
 ]

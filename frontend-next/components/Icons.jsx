@@ -63,3 +63,62 @@ export const ChevronRightIcon = () => (
     <path d="M9 18l6-6-6-6" />
   </svg>
 )
+
+export const CloseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+  </svg>
+)
+
+export const ModelsIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="8" height="8" x="2" y="2" rx="1" /><rect width="8" height="8" x="14" y="2" rx="1" />
+    <rect width="8" height="8" x="2" y="14" rx="1" /><rect width="8" height="8" x="14" y="14" rx="1" />
+  </svg>
+)
+
+const PROVIDER_MAP = {
+  'openai': { name: 'OpenAI', color: '#10a37f', letter: 'O' },
+  'anthropic': { name: 'Anthropic', color: '#d97757', letter: 'A' },
+  'google': { name: 'Google', color: '#4285f4', letter: 'G' },
+  'meta-llama': { name: 'Meta', color: '#0668E1', letter: 'M' },
+  'meta': { name: 'Meta', color: '#0668E1', letter: 'M' },
+  'mistralai': { name: 'Mistral', color: '#f7d046', letter: 'M' },
+  'groq': { name: 'Groq', color: '#f55036', letter: 'G' },
+  'cohere': { name: 'Cohere', color: '#39594d', letter: 'C' },
+  'deepseek': { name: 'DeepSeek', color: '#4d6bfe', letter: 'D' },
+  'perplexity': { name: 'Perplexity', color: '#20808d', letter: 'P' },
+  'together_ai': { name: 'Together', color: '#6366f1', letter: 'T' },
+  'fireworks_ai': { name: 'Fireworks', color: '#f97316', letter: 'F' },
+  'replicate': { name: 'Replicate', color: '#3b82f6', letter: 'R' },
+  'huggingface': { name: 'Hugging Face', color: '#ffd21e', letter: 'H' },
+  'bedrock': { name: 'AWS Bedrock', color: '#ff9900', letter: 'B' },
+  'vertex_ai': { name: 'Vertex AI', color: '#4285f4', letter: 'V' },
+  'azure': { name: 'Azure', color: '#0078d4', letter: 'A' },
+}
+
+export const getModelProvider = (modelId) => {
+  const prefix = modelId.includes('/') ? modelId.split('/')[0].toLowerCase() : null
+  if (prefix && PROVIDER_MAP[prefix]) return PROVIDER_MAP[prefix]
+  return { name: prefix || modelId, color: '#6b7280', letter: (prefix || modelId)?.[0]?.toUpperCase() || '?' }
+}
+
+export const ModelProviderIcon = ({ modelId, size = 16 }) => {
+  const provider = getModelProvider(modelId)
+  return (
+    <div
+      className="flex-shrink-0 rounded flex items-center justify-center text-white font-bold"
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: provider.color,
+        fontSize: size * 0.55,
+        borderRadius: size * 0.2,
+        lineHeight: 1,
+      }}
+      title={provider.name}
+    >
+      {provider.letter}
+    </div>
+  )
+}

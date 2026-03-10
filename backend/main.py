@@ -1,22 +1,48 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from core import (
-    SimilarityModel, LLMController,
-    SendSingleResponsePayload, GetSingleResponseObject, SendSimilarityScorePayload, 
-    GetSimilarityScorePayload, GetSimilarityScoreObject
+    SimilarityModel, LLMController, get_responses_capable_models,
+    SendSingleResponsePayload, GetSingleResponseObject, SendSimilarityScorePayload,
+    GetSimilarityScorePayload, GetSimilarityScoreObject, GetAvailableModelsResponse
 )
 import asyncio
+import json
+import litellm
 
-app = FastAPI()
+_available_models: list[str] = []
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global _available_models
+    _available_models = get_responses_capable_models()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 sim = SimilarityModel()
 llm = LLMController()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Next.js / Vite dev servers
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get(f"/")
+@app.get("/")
 def read_root():
     return {
         "message": "Welcome to the model.aio backend!",
         "status": sim.STATUS
     }
+
+
+@app.get("/models")
+def get_models() -> GetAvailableModelsResponse:
+    """Return all LiteLLM models that support the /responses endpoint."""
+    return GetAvailableModelsResponse(models=_available_models)
 
 
 @app.post("/get_similarity_score")
@@ -68,19 +94,54 @@ async def get_similarity_score(payload: SendSimilarityScorePayload) -> GetSimila
 
 
 @app.post("/get_response")
-async def get_response(payload: SendSingleResponsePayload) -> GetSingleResponseObject:
+def get_response(payload: SendSingleResponsePayload) -> GetSingleResponseObject:
     """Endpoint to get responses from a model based on the user prompt."""
     try:
-        response = await llm.get_single_response_async(
-            selected_model=payload.model_data, # passing the model object
+        response = llm.get_response(
+            model_name=payload.model_data.model_name,
+            secret=payload.model_data.secret,
             prompt=payload.prompt
         )
 
-        return response
+        return GetSingleResponseObject(
+            model_name=payload.model_data.model_name,
+            response=response
+        )
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Error in generating responses: {str(e)}"
         )
+
+
+@app.post("/get_response_stream")
+async def get_response_stream(payload: SendSingleResponsePayload):
+    """Streaming SSE endpoint for model responses."""
+    # Capture values upfront so the async generator closure holds primitives
+    model_name = payload.model_data.model_name
+    api_key = payload.model_data.secret.strip()
+    prompt = payload.prompt
+
+    async def event_generator():
+        try:
+            response = await litellm.acompletion(
+                model=model_name,
+                messages=[{"role": "user", "content": prompt}],
+                api_key=api_key,
+                stream=True,
+            )
+            async for chunk in response:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield f"data: {json.dumps({'content': delta})}\n\n"
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
     

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import MultiModelResponse from './MultiModelResponse'
 import { SendIcon, UserIcon, BotIcon } from './Icons'
+import { streamModelResponse, getSimilarityScores } from '../src/services/api'
 
 const TypingIndicator = () => (
   <div className="flex items-start gap-3 animate-fade-in">
@@ -47,10 +48,10 @@ const EmptyState = ({ enabledModelsCount, setSidebarView }) => (
         {enabledModelsCount < 2
           ? <>Enable at least 2 models in{' '}
               <button
-                onClick={() => setSidebarView('settings')}
+                onClick={() => setSidebarView('active-models')}
                 className="text-violet-500 hover:text-violet-400 underline underline-offset-2 transition-colors"
               >
-                settings
+                Active Models
               </button>{' '}
               to start comparing responses.</>
           : 'Send a message to compare responses across your selected models.'
@@ -62,7 +63,7 @@ const EmptyState = ({ enabledModelsCount, setSidebarView }) => (
 
 const ChatWindow = ({
   enabledModelsCount,
-  enabledModelNames,
+  enabledModels,
   baselineModelName,
   messages: messagesProp,
   setMessages,
@@ -89,38 +90,106 @@ const ChatWindow = ({
 
   const canSend = !isAiTyping && enabledModelsCount >= 2 && !!baselineModelName
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim() || !canSend) return
 
+    const prompt = input.trim()
     const timestamp = new Date().toLocaleTimeString('en-US', {
       hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true,
     })
-    const userMessage = { id: Date.now(), text: input, sender: 'user', timestamp }
 
-    setMessages([...messages, userMessage])
+    setMessages(prev => [...prev, { id: Date.now(), text: prompt, sender: 'user', timestamp }])
     setInput('')
     setIsAiTyping(true)
 
-    setTimeout(() => {
-      const multiModelResponse = {
-        id: Date.now() + 1,
-        sender: 'ai',
-        type: 'multi-model',
-        timestamp: new Date().toLocaleTimeString('en-US', {
-          hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true,
-        }),
-        summary: `${enabledModelsCount} model${enabledModelsCount > 1 ? 's have' : ' has'} responded. Review their answers and similarity scores below.`,
-        overallSimilarity: 71,
-        baselineModel: baselineModelName,
-        responses: enabledModelNames.map(name => ({
-          model: name,
-          response: `${name}'s response to: "${userMessage.text}". This is a placeholder answer with some detail.`,
-          similarity: Math.floor(Math.random() * (95 - 60 + 1) + 60),
+    const msgId = Date.now() + 1
+
+    // Insert message immediately with per-model skeleton responses
+    setMessages(prev => [...prev, {
+      id: msgId,
+      sender: 'ai',
+      type: 'multi-model',
+      timestamp: new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true,
+      }),
+      streaming: true,
+      summary: null,
+      overallSimilarity: null,
+      baselineModel: baselineModelName,
+      responses: enabledModels.map(({ name }) => ({
+        model: name, response: '', streaming: true, error: null, similarity: null,
+      })),
+    }])
+
+    // Accumulate full text per model for similarity scoring
+    const finalTexts = {}
+
+    const updateResponse = (modelName, patch) => {
+      setMessages(prev => prev.map(m => {
+        if (m.id !== msgId) return m
+        return { ...m, responses: m.responses.map(r => r.model === modelName ? { ...r, ...patch } : r) }
+      }))
+    }
+
+    // Stream all models concurrently
+    await Promise.allSettled(
+      enabledModels.map(({ name, apiKey }) => new Promise((resolve) => {
+        streamModelResponse(
+          name, apiKey, prompt,
+          (chunk) => {
+            finalTexts[name] = (finalTexts[name] ?? '') + chunk
+            updateResponse(name, { response: finalTexts[name] })
+          },
+          () => { updateResponse(name, { streaming: false }); resolve() },
+          (err) => {
+            updateResponse(name, { streaming: false, error: true, response: `Error: ${err}` })
+            resolve()
+          }
+        )
+      }))
+    )
+
+    // Compute similarity scores now that all streams are done
+    const baselineIdx = enabledModels.findIndex(m => m.name === baselineModelName)
+    let similarityMap = {}
+    if (baselineIdx >= 0) {
+      try {
+        const payload = enabledModels.map(({ name }) => ({
+          model_name: name,
+          content: finalTexts[name] ?? '',
+        }))
+        const simResult = await getSimilarityScores(baselineIdx, payload)
+        simResult.content.forEach(item => {
+          similarityMap[item.model_name] = Math.round(item.similarity_score * 100)
+        })
+      } catch (e) {
+        console.error('Similarity scoring failed:', e)
+      }
+    }
+
+    const validSims = enabledModels
+      .filter(m => m.name !== baselineModelName)
+      .map(m => similarityMap[m.name])
+      .filter(s => s !== undefined)
+    const overallSimilarity = validSims.length > 0
+      ? Math.round(validSims.reduce((a, b) => a + b, 0) / validSims.length)
+      : 0
+
+    setMessages(prev => prev.map(m => {
+      if (m.id !== msgId) return m
+      return {
+        ...m,
+        streaming: false,
+        summary: `${enabledModels.length} model${enabledModels.length > 1 ? 's have' : ' has'} responded. Review their answers below.`,
+        overallSimilarity,
+        responses: m.responses.map(r => ({
+          ...r,
+          similarity: r.model === baselineModelName ? 100 : (similarityMap[r.model] ?? null),
         })),
       }
-      setIsAiTyping(false)
-      setMessages(prev => [...prev, multiModelResponse])
-    }, 2500)
+    }))
+
+    setIsAiTyping(false)
   }
 
   const handleKeyDown = (e) => {
@@ -163,7 +232,7 @@ const ChatWindow = ({
               if (msg.type === 'multi-model') return <MultiModelResponse key={msg.id} message={msg} />
               return null
             })}
-            {isAiTyping && <TypingIndicator />}
+            {isAiTyping && messages.length === 0 && <TypingIndicator />}
             <div ref={chatEndRef} />
           </div>
         )}
@@ -196,10 +265,10 @@ const ChatWindow = ({
                 <div className="absolute bottom-full right-0 mb-2 w-56 px-3 py-2 text-xs text-neutral-300 bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl">
                   Select a baseline and enable 2+ models in{' '}
                   <button
-                    onClick={() => setSidebarView('settings')}
+                    onClick={() => setSidebarView('active-models')}
                     className="text-violet-400 hover:text-violet-300 underline transition-colors"
                   >
-                    settings
+                    Active Models
                   </button>.
                 </div>
               )}
