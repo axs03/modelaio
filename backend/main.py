@@ -48,8 +48,27 @@ def get_models() -> GetAvailableModelsResponse:
 @app.post("/get_similarity_score")
 async def get_similarity_score(payload: SendSimilarityScorePayload) -> GetSimilarityScorePayload:
     base_model_idx = payload.base_model_idx
+
+    if len(payload.content) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail="At least 2 model responses are required to compute similarity."
+        )
+
+    if base_model_idx < 0 or base_model_idx >= len(payload.content):
+        raise HTTPException(
+            status_code=400,
+            detail="base_model_idx is out of range for provided model responses."
+        )
+
     base_model = payload.content[base_model_idx]
-    base_model_content = base_model.content
+    base_model_content = base_model.content.strip()
+
+    if not base_model_content:
+        raise HTTPException(
+            status_code=422,
+            detail="Baseline model response cannot be empty."
+        )
 
     try:
         # similarity computations in thread pool for concurrency
@@ -74,8 +93,8 @@ async def get_similarity_score(payload: SendSimilarityScorePayload) -> GetSimila
 
             if isinstance(score, Exception):
                 raise HTTPException(
-                    status_code=500,
-                    detail=f"Error computing similarity for {item.model_name}: {str(score)}"
+                    status_code=422,
+                    detail=f"Invalid response content for similarity ({item.model_name}): {str(score)}"
                 )
             results.append(GetSimilarityScoreObject(
                 model_name=item.model_name,
@@ -86,6 +105,8 @@ async def get_similarity_score(payload: SendSimilarityScorePayload) -> GetSimila
             base_model_name=base_model.model_name,
             content=results
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500,
