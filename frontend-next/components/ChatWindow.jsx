@@ -88,7 +88,10 @@ const ChatWindow = ({
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`
   }, [input])
 
-  const canSend = !isAiTyping && enabledModelsCount >= 2 && !!baselineModelName
+  const enabledModelsHaveApiKeys = enabledModels.every(
+    ({ apiKey }) => typeof apiKey === 'string' && apiKey.trim().length > 0
+  )
+  const canSend = !isAiTyping && enabledModelsCount >= 2 && !!baselineModelName && enabledModelsHaveApiKeys
 
   const handleSend = async () => {
     if (!input.trim() || !canSend) return
@@ -131,65 +134,67 @@ const ChatWindow = ({
       }))
     }
 
-    // Stream all models concurrently
-    await Promise.allSettled(
-      enabledModels.map(({ name, apiKey }) => new Promise((resolve) => {
-        streamModelResponse(
-          name, apiKey, prompt,
-          (chunk) => {
-            finalTexts[name] = (finalTexts[name] ?? '') + chunk
-            updateResponse(name, { response: finalTexts[name] })
-          },
-          () => { updateResponse(name, { streaming: false }); resolve() },
-          (err) => {
-            updateResponse(name, { streaming: false, error: true, response: `Error: ${err}` })
-            resolve()
-          }
-        )
-      }))
-    )
-
-    // Compute similarity scores now that all streams are done
-    const baselineIdx = enabledModels.findIndex(m => m.name === baselineModelName)
-    let similarityMap = {}
-    if (baselineIdx >= 0) {
-      try {
-        const payload = enabledModels.map(({ name }) => ({
-          model_name: name,
-          content: finalTexts[name] ?? '',
+    try {
+      // Stream all models concurrently
+      await Promise.allSettled(
+        enabledModels.map(({ name, apiKey }) => new Promise((resolve) => {
+          streamModelResponse(
+            name, apiKey, prompt,
+            (chunk) => {
+              finalTexts[name] = (finalTexts[name] ?? '') + chunk
+              updateResponse(name, { response: finalTexts[name] })
+            },
+            () => { updateResponse(name, { streaming: false }); resolve() },
+            (err) => {
+              updateResponse(name, { streaming: false, error: true, response: `Error: ${err}` })
+              resolve()
+            }
+          )
         }))
-        const simResult = await getSimilarityScores(baselineIdx, payload)
-        simResult.content.forEach(item => {
-          similarityMap[item.model_name] = Math.round(item.similarity_score * 100)
-        })
-      } catch (e) {
-        console.error('Similarity scoring failed:', e)
+      )
+
+      // Compute similarity scores now that all streams are done
+      const baselineIdx = enabledModels.findIndex(m => m.name === baselineModelName)
+      let similarityMap = {}
+      if (baselineIdx >= 0) {
+        try {
+          const payload = enabledModels.map(({ name }) => ({
+            model_name: name,
+            content: finalTexts[name] ?? '',
+          }))
+          const simResult = await getSimilarityScores(baselineIdx, payload)
+          simResult.content.forEach(item => {
+            similarityMap[item.model_name] = Math.round(item.similarity_score * 100)
+          })
+        } catch (e) {
+          console.error('Similarity scoring failed:', e)
+        }
       }
+
+      const validSims = enabledModels
+        .filter(m => m.name !== baselineModelName)
+        .map(m => similarityMap[m.name])
+        .filter(s => s !== undefined)
+      const overallSimilarity = validSims.length > 0
+        ? Math.round(validSims.reduce((a, b) => a + b, 0) / validSims.length)
+        : 0
+
+      setMessages(prev => prev.map(m => {
+        if (m.id !== msgId) return m
+        return {
+          ...m,
+          streaming: false,
+          summary: `${enabledModels.length} model${enabledModels.length > 1 ? 's have' : ' has'} responded. Review their answers below.`,
+          overallSimilarity,
+          responses: m.responses.map(r => ({
+            ...r,
+            similarity: r.model === baselineModelName ? 100 : (similarityMap[r.model] ?? null),
+          })),
+        }
+      }))
+    } finally {
+      setIsAiTyping(false)
     }
-
-    const validSims = enabledModels
-      .filter(m => m.name !== baselineModelName)
-      .map(m => similarityMap[m.name])
-      .filter(s => s !== undefined)
-    const overallSimilarity = validSims.length > 0
-      ? Math.round(validSims.reduce((a, b) => a + b, 0) / validSims.length)
-      : 0
-
-    setMessages(prev => prev.map(m => {
-      if (m.id !== msgId) return m
-      return {
-        ...m,
-        streaming: false,
-        summary: `${enabledModels.length} model${enabledModels.length > 1 ? 's have' : ' has'} responded. Review their answers below.`,
-        overallSimilarity,
-        responses: m.responses.map(r => ({
-          ...r,
-          similarity: r.model === baselineModelName ? 100 : (similarityMap[r.model] ?? null),
-        })),
-      }
-    }))
-
-    setIsAiTyping(false)
   }
 
   const handleKeyDown = (e) => {
@@ -263,7 +268,7 @@ const ChatWindow = ({
               </button>
               {showTooltip && (
                 <div className="absolute bottom-full right-0 mb-2 w-56 px-3 py-2 text-xs text-neutral-300 bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl">
-                  Select a baseline and enable 2+ models in{' '}
+                  Select a baseline, enable 2+ models, and add API keys for enabled models in{' '}
                   <button
                     onClick={() => setSidebarView('active-models')}
                     className="text-violet-400 hover:text-violet-300 underline transition-colors"
